@@ -110,3 +110,5 @@ pub async fn get_my_summoner() -> Result<Summoner, String> {
 }
 
 pub mod mayhem_style;
+
+pub mod app_update;

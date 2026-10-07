@@ -16,7 +16,7 @@
           v-if="availableUpdate"
           type="button"
           class="update-pill"
-          :title="`发现新版本 v${availableUpdate.version}，点击立即更新`"
+          :title="`发现新版本 v${availableUpdate.version}，点击查看更新`"
           @click="onUpdatePillClick"
         >
           <n-icon :size="13" :component="ArrowUpCircleOutline" />
@@ -83,7 +83,7 @@
   </n-flex>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   LogoGithub,
   RemoveOutline,
@@ -102,7 +102,7 @@ import SuperSearch from './SuperSearch.vue'
 import { useSettingsStore } from '@renderer/pinia/setting'
 import { useGameState, lcuConnected } from '@renderer/composables/useGameState'
 import { closeLeagueByIpc } from '@renderer/services/ipc'
-import { useAppUpdate } from '@renderer/composables/useAppUpdate'
+import { useAppUpdate, PROJECT_URL } from '@renderer/composables/useAppUpdate'
 import { GATE_SETTLE_MS, GATE_FALLBACK_MS } from '@renderer/composables/useStartupDialogs'
 
 /**
@@ -165,7 +165,7 @@ const themeSwitch = computed(() => settingsStore.theme.name !== darkTheme.name)
 // ─── 顶栏升级药丸 ───────────────────────────────────────────────────────────
 // availableUpdate 是 useAppUpdate 的模块级单例状态：无论是这里的启动静默检查
 // 查到的，还是用户在「关于」页手动检查查到的，都共享同一份，药丸都能感知到。
-const { availableUpdate, showUpdateDialog } = useAppUpdate()
+const { availableUpdate, showUpdateDialog, backgroundCheck } = useAppUpdate()
 
 /** 药丸点击：已经是"已发现更新"的信号，直接弹确认框走升级流程，不用再查一遍 */
 const onUpdatePillClick = (): void => {
@@ -190,7 +190,7 @@ function scheduleSilentUpdateCheck(): void {
     if (scheduled) return
     scheduled = true
     window.setTimeout(() => {
-      /* Fork releases are built locally; never install upstream RA over Hexaram. */
+      void backgroundCheck()
     }, GATE_SETTLE_MS)
   }
   if (lcuConnected.value) {
@@ -209,8 +209,18 @@ function scheduleSilentUpdateCheck(): void {
   }, GATE_FALLBACK_MS)
 }
 
+let updateInterval: ReturnType<typeof setInterval> | undefined
 onMounted(() => {
   scheduleSilentUpdateCheck()
+  updateInterval = setInterval(
+    () => {
+      void backgroundCheck()
+    },
+    6 * 60 * 60 * 1000
+  )
+})
+onUnmounted(() => {
+  if (updateInterval) clearInterval(updateInterval)
 })
 
 /**
@@ -218,7 +228,7 @@ onMounted(() => {
  * 使用 Tauri 的 open API 打开项目仓库链接
  */
 const openGithubLink = async (): Promise<void> => {
-  await openUrl('https://github.com/doujiaoshaorou')
+  await openUrl(PROJECT_URL)
 }
 
 /**
