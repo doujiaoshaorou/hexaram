@@ -1,0 +1,527 @@
+/* ========== 本地字体（latin 子集，变量字重） ==========
+   原先 index.html 外链 Google Fonts：外链样式表会阻塞首帧渲染，国内直连不稳时白屏
+   被拖到超时；本地打包还能离线启动。family 名保持 'Inter' / 'Oswald'，
+   现有 font-family 声明无需改动。中文仍回落系统字体。
+   来源：@fontsource-variable/inter|oswald 5.3.0，许可证见同目录 *-LICENSE.txt（SIL OFL） */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('./assets/fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 700;
+  src: url('./assets/fonts/oswald-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* 暗色 token。第二个选择器：naive 亮色主题的 tooltip 仍是深底气泡，
+   气泡内沿用暗色 token（theme-light 挂 <html> 后，否则会深字压深底） */
+:root,
+.theme-light .n-tooltip {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* ========== 设计 Token（深色主题） ========== */
+  --bg-base: #0d0d0f;
+  --bg-surface: #141418;
+  --bg-elevated: #1a1a1e;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-tertiary: rgba(255, 255, 255, 0.45);
+  --semantic-win: #3d9b7a;
+  --semantic-loss: #c45c5c;
+  /* 警示/同情色（如"被打爆 / 被连累"），介于胜负之间的琥珀 */
+  --semantic-warn: #d39a4e;
+  --team-blue: rgba(59, 130, 246, 0.35);
+  --team-red: rgba(239, 68, 68, 0.35);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --stagger-step: var(--stagger);
+
+  /* === 玻璃层 === */
+  --glass-bg-low: rgba(255, 255, 255, 0.03);
+  --glass-bg-mid: rgba(255, 255, 255, 0.05);
+  --glass-bg-high: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* === 发光阴影 === */
+  --glow-win: 0 0 14px rgba(61, 155, 122, 0.28);
+  --glow-loss: 0 0 14px rgba(196, 92, 92, 0.22);
+
+  /* === 阴影层次 === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
+
+  /* === 动效时长 === */
+  --dur-instant: 80ms;
+  --dur-fast: 150ms;
+  --dur-normal: 250ms;
+  --dur-spring: 400ms;
+  --dur-slow: 500ms;
+
+  /* === 动效曲线 === */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* === 列表入场错位 === */
+  --stagger: 40ms;
+
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-28: 28px;
+
+  /* === 字阶 === */
+  --font-size-2xs: 10px;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.45;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* === 补 space 阶 === */
+  --space-2: 2px;
+  --space-6: 6px;
+  --space-10: 10px;
+
+  /* === 圆角补全 === */
+  --radius-xs: 3px;
+  --radius-pill: 999px;
+
+  /* === 控件几何（Int UI 双档制：控件 4px / 浮层 8px） === */
+  --radius-control: 4px;
+  --radius-overlay: 8px;
+  /* 镂空描边控件：静默态细边，hover 只提亮边框不加底色 */
+  --border-control: rgba(255, 255, 255, 0.16);
+  --border-control-hover: rgba(255, 255, 255, 0.34);
+
+  /* === Focus ring（实心环，替代默认光晕） === */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 1px;
+  --focus-ring-color: rgba(61, 155, 122, 0.85);
+
+  /* === 数据语义高亮（收编各组件散落的一次性 hex） === */
+  --accent-gold: #f2bf63;
+  --accent-gold-deep: #e5a732;
+  --accent-blue: #59b5ff;
+  --accent-sky: #38bdf8;
+  --semantic-win-bright: #5ecfa4;
+  --semantic-loss-bright: #e57878;
+
+  /* === 字阶补全（展示用大字与极小字） === */
+  --font-size-3xs: 9px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+
+  /* === RecordCard win/loss 渐变（深色） === */
+  --win-bar-gradient: linear-gradient(180deg, #5ecfa4, #2d7a5e);
+  --loss-bar-gradient: linear-gradient(180deg, #e57878, #8a3232);
+
+  /* === 壳层交互 token(批0:导航/顶栏;--hover-bg 供后续批次复用) === */
+  --hover-bg: var(--glass-bg-mid);
+  /* 装饰性青绿光晕(logo 徽标/导航激活 pill)——浅色置 none:白底光晕读作污渍 */
+  --decor-glow-win: 0 0 12px color-mix(in srgb, var(--semantic-win) 16%, transparent);
+  --nav-active-bg: color-mix(in srgb, var(--semantic-win) 14%, transparent);
+  --nav-active-border: color-mix(in srgb, var(--semantic-win) 20%, transparent);
+  --nav-indicator-glow: 0 0 8px color-mix(in srgb, var(--semantic-win) 40%, transparent);
+  --status-on-bg: color-mix(in srgb, var(--semantic-win) 12%, transparent);
+  --status-dot-win-bg: var(--semantic-win-bright);
+  --status-dot-glow-win: 0 0 5px color-mix(in srgb, var(--semantic-win-bright) 60%, transparent);
+  --status-dot-glow-sky: 0 0 5px color-mix(in srgb, var(--accent-sky) 50%, transparent);
+
+  /* === naive 覆盖读取的材质 / 强调 token（必须字面色值，见 theme/overrides.ts）=== */
+  --surface-card: rgba(255, 255, 255, 0.05);
+  --surface-input: rgba(255, 255, 255, 0.05);
+  --accent-hover: #378b6e;
+  --accent-pressed: #317c62;
+  --focus-ring-soft: rgba(61, 155, 122, 0.35);
+  --menu-item-active: rgba(61, 155, 122, 0.14);
+  --menu-item-active-hover: rgba(61, 155, 122, 0.18);
+
+  /* === 材质语义 token：暗色值 = 迁移前各处实际取值（暗色像素不变），亮色见 .theme-light === */
+  --surface-sunken: rgba(255, 255, 255, 0.03);
+  --sunken-border: var(--glass-border);
+  --sunken-shadow: var(--shadow-sm);
+  --surface-control: rgba(255, 255, 255, 0.03);
+  --surface-group: rgba(255, 255, 255, 0.05);
+  --surface-shell: rgba(255, 255, 255, 0.03);
+  --surface-sidebar: var(--bg-base);
+  --shell-header-shadow: 0 1px 0 rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --panel-glass-bg: transparent;
+  --panel-glass-shadow: 0 0 #0000;
+  --track-bg: rgba(255, 255, 255, 0.05);
+  --progress-rail: rgba(255, 255, 255, 0.1);
+  --stat-dot-empty: var(--border-subtle);
+  --settings-menu-active-bg: rgba(61, 155, 122, 0.13);
+  --detail-header-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+  --detail-team-card-bg: rgba(255, 255, 255, 0.015);
+  --detail-team-card-shadow: 0 0 #0000;
+  --detail-column-header-bg: transparent;
+  --detail-row-me-bg: color-mix(in srgb, var(--semantic-win) 10%, transparent);
+  /* 带胜负色渐变的小条（遇见记录）底色：暗色渐变铺透明底，亮色渐变消失后露出凹面 */
+  --result-row-bg: transparent;
+
+  /* === 效果强度开关：暗色 1 / 亮色 0。组件写 calc(N% * var(--fx-glow)) 等，
+     暗色计算结果与原写法完全一致，亮色则整体消失（白底上光晕 / 色块读作污渍）=== */
+  --fx-glow: 1;
+  --fx-wash: 1;
+  --fx-ambient: 1;
+
+  /* === 骨架屏（加载占位）=== */
+  --sk-base: rgba(255, 255, 255, 0.06);
+  --sk-highlight: rgba(255, 255, 255, 0.07);
+
+  /* === 战绩卡固定列轨道：RecordCard 与其骨架屏共用，骨架→真卡原地替换不跳 === */
+  --record-card-columns: 58px clamp(42px, calc(42px + (100vw - 1100px) * 10 / 1100), 52px)
+    minmax(64px, 84px) minmax(174px, 216px) 172px 140px;
+}
+
+/* 浅色主题 Token —— 冷瓷修正版（2026-09 真机 A/B/C 原型定稿 A）
+   冷中性浅灰画布 + 实心白卡（发丝边 + 极淡双层投影）+ 淡灰凹面，层级只靠这三级；
+   所有面实心，不叠半透明灰；胜负只用色条与文字色表达；不用任何发光（--fx-* = 0）。
+   墨色统一冷墨 rgb(15,23,42)，纯黑 alpha 在浅色下显脏 */
+.theme-light {
+  --bg-base: #f1f3f5;
+  --bg-surface: #fbfcfd;
+  --bg-elevated: #ffffff;
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --text-primary: rgba(15, 23, 42, 0.92);
+  --text-secondary: rgba(15, 23, 42, 0.62);
+  --text-tertiary: rgba(15, 23, 42, 0.42);
+  --semantic-win: #1f8a66;
+  --semantic-loss: #c2413b;
+  /* 浅色主题琥珀，加深以保证对比度 */
+  --semantic-warn: #b8842f;
+  --team-blue: rgba(59, 130, 246, 0.25);
+  --team-red: rgba(239, 68, 68, 0.25);
+  /* 两层极淡投影：1px 贴地 + 3px 柔影，白卡从浅灰画布上轻轻浮起 */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover: 0 6px 16px rgba(15, 23, 42, 0.1);
+  --glass-bg-low: rgba(15, 23, 42, 0.025);
+  --glass-bg-mid: rgba(15, 23, 42, 0.04);
+  --glass-bg-high: rgba(15, 23, 42, 0.06);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  /* 浅色不做发光：白底上的彩色光晕读作污渍而非氛围 */
+  --glow-win: 0 0 0 rgba(0, 0, 0, 0);
+  --glow-loss: 0 0 0 rgba(0, 0, 0, 0);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.1);
+  --win-bar-gradient: linear-gradient(180deg, #3fae86, #1f8a66);
+  --loss-bar-gradient: linear-gradient(180deg, #d9625b, #a93630);
+  --border-control: rgba(15, 23, 42, 0.2);
+  --border-control-hover: rgba(15, 23, 42, 0.4);
+  --focus-ring-color: rgba(31, 138, 102, 0.85);
+  --accent-gold: #b8862a;
+  --accent-gold-deep: #9c6f1e;
+  --accent-blue: #2f7fd1;
+  --accent-sky: #0284c7;
+  --semantic-win-bright: #2d9d76;
+  --semantic-loss-bright: #cf5f5f;
+
+  --hover-bg: var(--glass-bg-high);
+  --decor-glow-win: none;
+  --nav-active-bg: color-mix(in srgb, var(--semantic-win) 12%, transparent);
+  --nav-active-border: color-mix(in srgb, var(--semantic-win) 18%, transparent);
+  --nav-indicator-glow: 0 0 6px color-mix(in srgb, var(--semantic-win) 30%, transparent);
+  --status-on-bg: color-mix(in srgb, var(--semantic-win) 10%, transparent);
+  --status-dot-win-bg: var(--semantic-win);
+  --status-dot-glow-win: 0 0 4px color-mix(in srgb, var(--semantic-win-bright) 40%, transparent);
+  --status-dot-glow-sky: 0 0 4px color-mix(in srgb, var(--accent-sky) 35%, transparent);
+
+  --surface-card: #ffffff;
+  --surface-input: #ffffff;
+  --accent-hover: #1a7a5a;
+  --accent-pressed: #166a4e;
+  --focus-ring-soft: rgba(31, 138, 102, 0.35);
+  --menu-item-active: rgba(31, 138, 102, 0.09);
+  --menu-item-active-hover: rgba(31, 138, 102, 0.13);
+
+  --surface-sunken: #f5f7f9;
+  --sunken-border: transparent;
+  --sunken-shadow: 0 0 #0000;
+  --surface-control: #ffffff;
+  --surface-group: transparent;
+  --surface-shell: var(--bg-surface);
+  --surface-sidebar: var(--bg-surface);
+  --shell-header-shadow: 0 0 #0000;
+  --panel-glass-bg: var(--bg-elevated);
+  --panel-glass-shadow: var(--shadow-card);
+  --track-bg: rgba(15, 23, 42, 0.08);
+  --progress-rail: rgba(15, 23, 42, 0.08);
+  --stat-dot-empty: rgba(15, 23, 42, 0.2);
+  --settings-menu-active-bg: transparent;
+  --detail-header-bg: var(--surface-card);
+  --detail-team-card-bg: var(--surface-card);
+  --detail-team-card-shadow: var(--shadow-card);
+  --detail-column-header-bg: var(--surface-sunken);
+  --detail-row-me-bg: color-mix(in srgb, var(--semantic-win) 8%, transparent);
+  --result-row-bg: var(--surface-sunken);
+  --fx-glow: 0;
+  --fx-wash: 0;
+  --fx-ambient: 0;
+
+  --sk-base: rgba(15, 23, 42, 0.07);
+  --sk-highlight: rgba(255, 255, 255, 0.75);
+}
+
+.font-number {
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* 左栏「玻璃面板」（UserRecord / RankCard 共用）：暗色透明底 + 细边，亮色升为纸面
+   （白底 + 细边 + 低层投影）；!important 压过 n-card 自身底色 */
+.panel-glass {
+  background: var(--panel-glass-bg) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--panel-glass-shadow) !important;
+}
+
+/* JB 风格实心 focus ring：键盘聚焦时 2px 实心环 + 1px 间隙，替代光晕 */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* 减少动效偏好：可访问性 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0s;
+    --transition-normal: 0s;
+    --transition-slow: 0s;
+    --stagger-step: 0s;
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-normal: 0ms;
+    --dur-spring: 0ms;
+    --dur-slow: 0ms;
+    --stagger: 0ms;
+  }
+}
+
+/* 进度条统一精致化：圆角轨道与填充 + 填充动画 */
+.n-progress .n-progress-graph-line,
+.n-progress .n-progress-graph-line-fill {
+  border-radius: 999px;
+}
+.n-progress .n-progress-graph-line {
+  overflow: hidden;
+}
+.n-progress .n-progress-graph-line-fill {
+  transition: width var(--dur-spring) var(--ease-expo);
+}
+
+/* 入场动画：卡片/区块 */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 设置滚动条的宽度和颜色 */
+::-webkit-scrollbar {
+  width: 4px;
+  /* 滚动条宽度 */
+  height: 4px;
+  /* 滚动条高度 */
+}
+
+/* 设置滚动条轨道的样式 */
+::-webkit-scrollbar-track {
+  background: transparent;
+  /* 轨道背景透明 */
+}
+
+/* 设置滚动条滑块的样式 */
+::-webkit-scrollbar-thumb {
+  background: rgba(111, 111, 111, 0.45);
+  border-radius: 6px;
+}
+
+/* 设置滚动条滑块在悬停时的样式 */
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(111, 111, 111, 1);
+  /* 悬停时滑块颜色加深 */
+}
+
+/* 骨架屏扫光动画 */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ========== 骨架屏占位 ==========
+   全局共用：主题感知底色 + 一道淡扫光（复用 shimmer）。战绩卡骨架与左栏各块共用，
+   避免各组件各写一套颜色导致明暗主题下走样；尺寸由使用方给 */
+.sk {
+  display: block;
+  border-radius: var(--radius-sm);
+  background-color: var(--sk-base);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--sk-highlight) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.sk-circle {
+  border-radius: 50%;
+}
+
+/* 真实内容替换骨架时的淡入（v-if 切换时新元素插入即播放） */
+.sk-reveal {
+  animation: sk-reveal var(--dur-fast) var(--ease-expo) both;
+}
+
+@keyframes sk-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+  }
+}
+
+/* 通用入场动画 */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 状态圆点脉冲 */
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/**
+ * 待裁决呼吸角标：引导用户去处理云端配置冲突（一台设备一辈子只出现一次的
+ * 裁决弹窗，改成被动角标引导后使用）。目前挂在左侧导航「设置」项与设置页
+ * 「数据与同步」菜单项上，见 SideNavigation.vue / views/Settings.vue。
+ * 全局共用一份定义，避免两处各写一套颜色/动效导致后续走样。
+ */
+.pending-badge-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-dot-win-bg);
+  box-shadow: var(--status-dot-glow-win);
+  animation: badge-breathe 1.8s ease-in-out infinite;
+}
+
+@keyframes badge-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.82);
+  }
+}
+
+/* 呼吸动效对前庭敏感人群不友好：偏好减少动效时退化为静态常亮点 */
+@media (prefers-reduced-motion: reduce) {
+  .pending-badge-dot {
+    animation: none;
+  }
+}
+
+/* Switch 激活态 glow */
+.n-switch.n-switch--active .n-switch__button {
+  box-shadow: 0 0 8px rgba(61, 155, 122, 0.3) !important;
+}
+
+/**
+ * 更新日志弹窗内容（Markdown 渲染）。
+ *
+ * 原属 About.vue 的全局样式块，随 useAppUpdate composable 抽出后迁到这里：
+ * showUpdateDialog 现在既可能由关于页触发，也可能由顶栏升级药丸触发，而
+ * About.vue 是懒加载路由 chunk——若用户从未打开过"关于"页就先点了顶栏药丸，
+ * About.vue 的样式还没被加载，弹窗里的更新日志会没有这层样式。放进全局样式
+ * 表（main.ts 启动即加载）确保两个入口一致。
+ */
+.update-log-content {
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--glass-bg-mid);
+  padding: var(--space-12);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-8);
+  line-height: 1.6;
+}
+.update-log-content a {
+  color: var(--accent-blue) !important;
+  text-decoration: none;
+  cursor: pointer;
+}
+.update-log-content a:hover {
+  text-decoration: underline;
+}

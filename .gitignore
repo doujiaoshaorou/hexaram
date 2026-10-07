@@ -1,0 +1,102 @@
+# Go 编译输出
+/bin/
+/obj/
+/pkg/
+
+# 二进制文件
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go 临时文件
+*.log
+*.out
+
+# 依赖管理
+vendor/
+
+# IDE 和编辑器配置文件
+.vscode/
+.idea/
+*.iml
+
+# 本地工具产物（浏览器自动化截图 / agent 头脑风暴草稿 / 本地设计文档）
+# docs/ 整体忽略，仅放行 specs（评审通过的设计文档需要入库）
+.playwright-mcp/
+.superpowers/
+docs/*
+!docs/superpowers/
+docs/superpowers/*
+!docs/superpowers/specs/
+
+# Node.js 项目依赖
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Electron 特定文件
+dist/
+out/
+*.asar
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 临时文件
+*.tmp
+*.swp
+*.swo
+*.swn
+*.~undo-tree~
+*.un~
+~*
+
+# 特定文件
+.env
+.env.local
+.env.*.local
+
+# Cloudflare Worker
+worker.js
+wrangler.toml
+
+# 打包结果
+/build/
+*.zip
+*.tar.gz
+
+# GoLand 和 JetBrains IDE 文件
+.idea/
+*.iml
+
+# MacOS 特定文件
+*.DS_Store
+
+config.yaml
+opgg_cache_*.json
+patch_notes_cache.json
+
+app.log.*
+
+# Claude Code / agent worktrees (scratch, never commit contents)
+.claude/worktrees/
+
+# Hexaram local-only data and development tools
+.tools/
+**/target/
+**/gen/
+hexaram-data/
+user-data/
+hexaram-config.yaml
+**/hexaram-config.yaml
+**/hexaram-data/
+**/user-data/
+**/opgg-flight.txt
+**/opgg-mayhem.html
+*.pem
+*.key
+*.pfx

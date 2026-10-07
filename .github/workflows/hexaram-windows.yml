@@ -1,0 +1,26 @@
+name: Build Hexaram Windows
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: rank-analysis-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: rank-analysis-app/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run tauri build -- --no-bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Hexaram-Windows-x64
+          path: rank-analysis-app/src-tauri/target/release/hexaram.exe

@@ -1,0 +1,549 @@
+[
+  {
+    "id": "hexaram_low_damage_ashe_trundle",
+    "name": "魔怔人",
+    "desc": "近 20 场海克斯中，寒冰或巨魔团队输出占比低于 12% 的对局至少 2 场。只描述重复低输出，不判断是否有适配强化或是否故意；缺少伤害数据不计入。",
+    "enabled": true,
+    "isDefault": true,
+    "good": false,
+    "condition": {
+      "type": "history",
+      "filters": [
+        {
+          "type": "recent",
+          "count": 20
+        },
+        {
+          "type": "champion",
+          "ids": [
+            22,
+            48
+          ]
+        },
+        {
+          "type": "stat",
+          "metric": "damageShare",
+          "op": "<",
+          "value": 0.12
+        }
+      ],
+      "refresh": {
+        "type": "count",
+        "op": ">=",
+        "value": 2
+      }
+    }
+  },
+  {
+    "id": "hexaram_streak_win",
+    "name": "{N}连胜",
+    "desc": "最近海克斯对局连续获胜至少 3 场",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "history",
+      "filters": [
+        {
+          "type": "recent",
+          "count": 20
+        }
+      ],
+      "refresh": {
+        "type": "streak",
+        "kind": "win",
+        "min": 3
+      }
+    }
+  },
+  {
+    "id": "hexaram_streak_loss",
+    "name": "{N}连败",
+    "desc": "最近海克斯对局连续失利至少 3 场，仅描述近期结果",
+    "enabled": true,
+    "isDefault": true,
+    "good": false,
+    "condition": {
+      "type": "history",
+      "filters": [
+        {
+          "type": "recent",
+          "count": 20
+        }
+      ],
+      "refresh": {
+        "type": "streak",
+        "kind": "loss",
+        "min": 3
+      }
+    }
+  },
+  {
+    "id": "hexaram_high_win",
+    "name": "近期高胜率",
+    "desc": "近 20 场海克斯胜率 ≥ 65%，至少 10 场",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 10
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "average",
+            "metric": "win",
+            "op": ">=",
+            "value": 0.65
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_low_win",
+    "name": "近期胜率偏低",
+    "desc": "近 20 场海克斯胜率 ≤ 35%，至少 10 场；不代表实力",
+    "enabled": true,
+    "isDefault": true,
+    "good": false,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 10
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "average",
+            "metric": "win",
+            "op": "<=",
+            "value": 0.35
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_style_front",
+    "name": "前排常客",
+    "desc": "近 200 场正常海斗中，至少 25% 且至少 6 场有坦装证据（2 件防御成装，或前排英雄搭配 1 件防御成装）。只描述出装偏好；总样本至少 30 场。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 30
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            },
+            {
+              "type": "stat",
+              "metric": "hexTankBuild",
+              "op": "==",
+              "value": 1
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 6
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "ratio",
+            "metric": "hexTankBuild",
+            "gameOp": "==",
+            "gameValue": 1,
+            "op": ">=",
+            "value": 0.25
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_style_support",
+    "name": "奶盾偏好",
+    "desc": "近 200 场正常海斗中，至少 20% 且至少 6 场有辅助出装（2 件辅助成装，或奶盾英雄搭配 1 件）。不把低输出等同混子；总样本至少 30 场。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 30
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            },
+            {
+              "type": "stat",
+              "metric": "hexSupportBuild",
+              "op": "==",
+              "value": 1
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 6
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "ratio",
+            "metric": "hexSupportBuild",
+            "gameOp": "==",
+            "gameValue": 1,
+            "op": ">=",
+            "value": 0.2
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_style_rescue",
+    "name": "救场奶盾",
+    "desc": "近 200 场中至少 15% 且至少 5 场：辅助出装，队友治疗+护盾每分钟 ≥600、参团 ≥65%、每分钟死亡 ≤0.65；自疗不计；总样本至少 30 场。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 30
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            },
+            {
+              "type": "stat",
+              "metric": "hexRescueSupport",
+              "op": "==",
+              "value": 1
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 5
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "ratio",
+            "metric": "hexRescueSupport",
+            "gameOp": "==",
+            "gameValue": 1,
+            "op": ">=",
+            "value": 0.15
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_style_ineffective",
+    "name": "辅助低效局偏多",
+    "desc": "近 200 场中至少 10% 且至少 4 场：辅助出装，队友治疗+护盾每分钟 <200、控制每分钟 <1 秒、输出 <12%、参团 <55%、每分钟死亡 >0.65；字段缺失不命中；总样本至少 30 场。",
+    "enabled": true,
+    "isDefault": true,
+    "good": false,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 30
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            },
+            {
+              "type": "stat",
+              "metric": "hexIneffectiveSupport",
+              "op": "==",
+              "value": 1
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 4
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "ratio",
+            "metric": "hexIneffectiveSupport",
+            "gameOp": "==",
+            "gameValue": 1,
+            "op": ">=",
+            "value": 0.1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_style_detached",
+    "name": "前排脱节局偏多",
+    "desc": "近 200 场中至少 12% 且至少 5 场：有坦装证据、承伤 ≥25%，但参团 <50%、每分钟死亡 >0.8；仅统计迹象，不断言开团失误；总样本至少 30 场。",
+    "enabled": true,
+    "isDefault": true,
+    "good": false,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 30
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            },
+            {
+              "type": "stat",
+              "metric": "hexFrontDetached",
+              "op": "==",
+              "value": 1
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 5
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "ratio",
+            "metric": "hexFrontDetached",
+            "gameOp": "==",
+            "gameValue": 1,
+            "op": ">=",
+            "value": 0.12
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_style_convert",
+    "name": "经济转输出",
+    "desc": "近 200 场中至少 20% 且至少 6 场：输出 ≥25%、输出占比/经济占比 ≥1.3、参团 ≥60%；描述伤害转化，不等同有效伤害；总样本至少 30 场。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 30
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            },
+            {
+              "type": "stat",
+              "metric": "hexGoldConversion",
+              "op": "==",
+              "value": 1
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 6
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 200
+            }
+          ],
+          "refresh": {
+            "type": "ratio",
+            "metric": "hexGoldConversion",
+            "gameOp": "==",
+            "gameValue": 1,
+            "op": ">=",
+            "value": 0.2
+          }
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,350 @@
+[
+  {
+    "id": "hexaram_streak_win",
+    "name": "{N}连胜",
+    "desc": "最近海克斯对局连续获胜至少 3 场",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "history",
+      "filters": [
+        {
+          "type": "recent",
+          "count": 20
+        }
+      ],
+      "refresh": {
+        "type": "streak",
+        "kind": "win",
+        "min": 3
+      }
+    }
+  },
+  {
+    "id": "hexaram_streak_loss",
+    "name": "{N}连败",
+    "desc": "最近海克斯对局连续失利至少 3 场，仅描述近期结果",
+    "enabled": true,
+    "isDefault": true,
+    "good": false,
+    "condition": {
+      "type": "history",
+      "filters": [
+        {
+          "type": "recent",
+          "count": 20
+        }
+      ],
+      "refresh": {
+        "type": "streak",
+        "kind": "loss",
+        "min": 3
+      }
+    }
+  },
+  {
+    "id": "hexaram_high_win",
+    "name": "近期高胜率",
+    "desc": "近 20 场海克斯胜率 ≥ 65%，至少 10 场",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 10
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "average",
+            "metric": "win",
+            "op": ">=",
+            "value": 0.65
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_low_win",
+    "name": "近期胜率偏低",
+    "desc": "近 20 场海克斯胜率 ≤ 35%，至少 10 场；不代表实力",
+    "enabled": true,
+    "isDefault": true,
+    "good": false,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 10
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "average",
+            "metric": "win",
+            "op": "<=",
+            "value": 0.35
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_participation",
+    "name": "积极参团",
+    "desc": "近 20 场海克斯平均参团率 ≥ 65%，至少 10 场",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            },
+            {
+              "type": "stat",
+              "metric": "participation",
+              "op": ">=",
+              "value": 0
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 10
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "average",
+            "metric": "participation",
+            "op": ">=",
+            "value": 0.65
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_damage",
+    "name": "输出担当",
+    "desc": "近 20 场海克斯平均团队伤害占比 ≥ 25%，至少 10 场",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            },
+            {
+              "type": "stat",
+              "metric": "damageShare",
+              "op": ">=",
+              "value": 0
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 10
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "average",
+            "metric": "damageShare",
+            "op": ">=",
+            "value": 0.25
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_tank",
+    "name": "承伤担当",
+    "desc": "近 20 场海克斯平均团队承伤占比 ≥ 28%，至少 10 场",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            },
+            {
+              "type": "stat",
+              "metric": "damageTakenShare",
+              "op": ">=",
+              "value": 0
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 10
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "average",
+            "metric": "damageTakenShare",
+            "op": ">=",
+            "value": 0.28
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_variety",
+    "name": "多英雄体验",
+    "desc": "近 20 场海克斯使用至少 10 位英雄，仅描述使用记录",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "count",
+            "op": ">=",
+            "value": 10
+          }
+        },
+        {
+          "type": "history",
+          "filters": [
+            {
+              "type": "recent",
+              "count": 20
+            }
+          ],
+          "refresh": {
+            "type": "distinctChampions",
+            "op": ">=",
+            "value": 10
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "hexaram_low_damage_ashe_trundle",
+    "name": "魔怔人",
+    "desc": "近 20 场海克斯中，寒冰或巨魔团队输出占比低于 12% 的对局至少 2 场。只描述重复低输出，不判断是否有适配强化或是否故意；缺少伤害数据不计入。",
+    "enabled": true,
+    "isDefault": true,
+    "good": false,
+    "condition": {
+      "type": "history",
+      "filters": [
+        {
+          "type": "recent",
+          "count": 20
+        },
+        {
+          "type": "champion",
+          "ids": [
+            22,
+            48
+          ]
+        },
+        {
+          "type": "stat",
+          "metric": "damageShare",
+          "op": "<",
+          "value": 0.12
+        }
+      ],
+      "refresh": {
+        "type": "count",
+        "op": ">=",
+        "value": 2
+      }
+    }
+  }
+]

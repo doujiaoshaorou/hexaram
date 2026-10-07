@@ -1,0 +1,85 @@
+//! # LCU 对局详情 API
+//!
+//! 对应 `lol-match-history/v1/games/{gameId}`，单场对局的详细数据（参与者、身份、结算等）；带缓存。
+
+use std::sync::{Arc, LazyLock};
+
+use moka::future::Cache;
+use serde::{Deserialize, Serialize};
+
+use crate::lcu::api::model::{Participant, ParticipantIdentity};
+
+/// 单场对局详情：结算结果、参与者身份与统计。
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+pub struct GameDetail {
+    #[serde(rename = "endOfGameResult")]
+    pub end_of_game_result: String,
+    #[serde(rename = "participantIdentities")]
+    pub participant_identities: Vec<ParticipantIdentity>, // Renamed to avoid conflict
+    pub participants: Vec<Participant>, // Renamed to avoid conflict
+    // 以下字段从 LCU API 获取
+    #[serde(rename = "gameCreationDate", default)]
+    pub game_creation_date: String,
+    #[serde(rename = "gameDuration", default)]
+    pub game_duration: i32,
+    #[serde(rename = "gameMode", default)]
+    pub game_mode: String,
+    #[serde(rename = "gameType", default)]
+    pub game_type: String,
+    #[serde(rename = "mapId", default)]
+    pub map_id: i32,
+    #[serde(rename = "queueId", default)]
+    pub queue_id: i32,
+    #[serde(rename = "platformId", default)]
+    pub platform_id: String,
+    /// 对局所在的客户端版本，形如 `16.14.794.9266`。
+    ///
+    /// 与 `lol-replays/v1/configuration` 的 `gameVersion` 同格式，用于判断本局
+    /// 回放是否与当前客户端补丁兼容（跨补丁的回放无法观看）。
+    #[serde(rename = "gameVersion", default)]
+    pub game_version: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GameDetailParticipantIdentity {
+    pub player: GameDetailPlayer, // Renamed to avoid conflict
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GameDetailPlayer {
+    #[serde(rename = "accountId")]
+    pub account_id: i64,
+    pub puuid: String,
+    #[serde(rename = "platformId")]
+    pub platform_id: String,
+    #[serde(rename = "summonerName")]
+    pub summoner_name: String,
+    #[serde(rename = "gameName")]
+    pub game_name: String,
+    #[serde(rename = "tagLine")]
+    pub tag_line: String,
+    #[serde(rename = "summonerId")]
+    pub summoner_id: i64,
+}
+/// 按 gameId 缓存的对局详情。已结束对局的详情不会再变，故不设过期。
+///
+/// 值用 `Arc` 包裹：一份详情含 10 人完整数据，session 重建与标签计算会反复读取，
+/// 命中时只复制指针。
+static GAME_DETAIL_CACHE: LazyLock<Cache<i64, Arc<GameDetail>>> =
+    LazyLock::new(|| Cache::builder().max_capacity(500).build());
+
+impl GameDetail {
+    /// 按对局 ID 获取对局详情（带缓存）。
+    pub async fn get_game_detail_by_id(game_id: &i64) -> Result<Arc<Self>, String> {
+        if let Some(cached) = GAME_DETAIL_CACHE.get(game_id).await {
+            return Ok(cached);
+        }
+        let uri = format!("lol-match-history/v1/games/{}", game_id);
+        let game_detail = Arc::new(crate::lcu::util::http::lcu_get::<Self>(&uri).await?);
+        // 缓存游戏详情
+        GAME_DETAIL_CACHE
+            .insert(*game_id, Arc::clone(&game_detail))
+            .await;
+        Ok(game_detail)
+    }
+}
