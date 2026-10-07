@@ -1,7 +1,7 @@
 {
   "name": "hexaram",
   "private": true,
-  "description": "基于 Rank Analysis 的海克斯大乱斗专用版",
+  "description": "海斗助手 Hexaram｜海克斯大乱斗助手",
   "type": "module",
   "author": "doujiaoshaorou",
   "scripts": {
@@ -53,7 +53,7 @@
     "vitest": "^1.2.2",
     "vue-tsc": "^2.2.8"
   },
-  "version": "0.9.0",
+  "version": "0.9.1",
   "contributors": [
     "wnzzer (Rank Analysis upstream)"
   ]

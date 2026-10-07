@@ -1,8 +1,8 @@
 <template>
   <n-flex justify="space-between" class="header-inner">
     <div class="header-left" data-tauri-drag-region>
-      <img class="logo-badge" src="../assets/wy-logo.svg" alt="WY 海克斯战绩本" />
-      <span class="header-title">海克斯战绩本</span>
+      <img class="logo-badge" src="../assets/wy-logo.svg" alt="WY 海斗助手" />
+      <span class="header-title">海斗助手</span>
     </div>
     <div class="header-center">
       <SuperSearch />

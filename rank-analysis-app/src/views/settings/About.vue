@@ -4,7 +4,7 @@ import { getVersion } from '@tauri-apps/api/app'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { useMessage } from 'naive-ui'
 import { useAppUpdate, PROJECT_URL, RELEASES_URL } from '../../composables/useAppUpdate'
-const version = ref('0.9.0')
+const version = ref('0.9.1')
 const update = useAppUpdate()
 const {
   checking,
@@ -41,9 +41,9 @@ onMounted(async () => {
       <div class="brand">
         <img src="../../assets/wy-logo.svg" alt="WY" />
         <div>
-          <h1>海克斯战绩本 <small>Hexaram</small></h1>
+          <h1>海斗助手 <small>Hexaram</small></h1>
           <n-tag type="success">v{{ version }}</n-tag>
-          <p>属于你的海克斯大乱斗战绩与复盘工具</p>
+          <p>海克斯大乱斗助手 · 查战绩、选海克斯、复盘每一局</p>
         </div>
       </div>
       <n-space

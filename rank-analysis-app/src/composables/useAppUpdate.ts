@@ -101,7 +101,7 @@ export function useAppUpdate() {
     if (installing.value || downloading.value) return
     dialog.warning({
       title: '重启安装更新',
-      content: '将保存现有配置与战绩并重启战绩本。选人或对局进行中不会安装。',
+      content: '将保存现有配置与战绩并重启海斗助手。选人或对局进行中不会安装。',
       positiveText: '重启安装',
       negativeText: '稍后',
       onPositiveClick: async () => {

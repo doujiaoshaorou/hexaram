@@ -39,7 +39,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Source archive failed' }
 $sum = Join-Path $out "Hexaram-$Version-SHA256SUMS.txt"
 @($asset, ($asset+'.sig'), $zip) | ForEach-Object { '{0}  {1}' -f (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash.ToLower(), [IO.Path]::GetFileName($_) } | Set-Content -LiteralPath $sum -Encoding utf8
 $commit = git -C $repo rev-parse HEAD
-& $GhPath release create "v$Version" $asset ($asset+'.sig') $zip $sum (Join-Path $repo 'LICENSE') (Join-Path $repo 'THIRD_PARTY_NOTICES.md') --repo doujiaoshaorou/hexaram --target $commit --title "海克斯战绩本 $Version" --notes-file $NotesPath --draft
+& $GhPath release create "v$Version" $asset ($asset+'.sig') $zip $sum (Join-Path $repo 'LICENSE') (Join-Path $repo 'THIRD_PARTY_NOTICES.md') --repo doujiaoshaorou/hexaram --target $commit --title "海斗助手 $Version" --notes-file $NotesPath --draft
 if ($LASTEXITCODE -ne 0) { throw 'Upload failed; inspect the draft before retrying' }
 $raw = & $GhPath api 'repos/doujiaoshaorou/hexaram/releases?per_page=20'
 if ($LASTEXITCODE -ne 0) { throw 'Cannot build fallback release index' }

@@ -1,8 +1,10 @@
-# 海克斯战绩本 · Hexaram
+# 海斗助手 Hexaram｜海克斯大乱斗助手
 
 ![WY 标志](rank-analysis-app/src/assets/wy-logo.svg)
 
-面向国服海克斯大乱斗的 Windows 战绩与复盘工具。
+**查战绩、选海克斯、复盘每一局。**
+
+面向国服玩家的海克斯大乱斗助手，支持 Windows。
 
 [下载最新版](https://github.com/doujiaoshaorou/hexaram/releases/latest) · [更新记录](https://github.com/doujiaoshaorou/hexaram/releases) · [问题反馈](https://github.com/doujiaoshaorou/hexaram/issues)
 
