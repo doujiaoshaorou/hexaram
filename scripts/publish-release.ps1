@@ -44,12 +44,14 @@ if ($LASTEXITCODE -ne 0) { throw 'Upload failed; inspect the draft before retryi
 $raw = & $GhPath api 'repos/doujiaoshaorou/hexaram/releases?per_page=20'
 if ($LASTEXITCODE -ne 0) { throw 'Cannot build fallback release index' }
 $index = @($raw | ConvertFrom-Json | Where-Object { (!$_.draft -and !$_.prerelease) -or $_.tag_name -eq "v$Version" } | ForEach-Object {
+  $releaseTag = $_.tag_name
   [PSCustomObject]@{
     tag_name=$_.tag_name; name=$_.name; body=$_.body
     html_url="https://github.com/doujiaoshaorou/hexaram/releases/tag/$($_.tag_name)"
     published_at=$(if ($_.published_at) { $_.published_at } else { [DateTime]::UtcNow.ToString('o') })
     draft=$false; prerelease=$false
-    assets=@($_.assets | ForEach-Object { [PSCustomObject]@{name=$_.name;browser_download_url=$_.browser_download_url} })
+    # Draft URLs use a temporary untagged-* path; publish the final tag URL in the index.
+    assets=@($_.assets | ForEach-Object { [PSCustomObject]@{name=$_.name;browser_download_url="https://github.com/doujiaoshaorou/hexaram/releases/download/$releaseTag/$([Uri]::EscapeDataString($_.name))"} })
   }
 })
 $indexPath = Join-Path $out 'hexaram-releases.json'
