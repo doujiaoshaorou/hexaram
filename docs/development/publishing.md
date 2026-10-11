@@ -39,7 +39,7 @@
 
 安装版沿用 RA / Tauri 的签名 NSIS 更新方式：校验安装包，使用 `/P /R /UPDATE` 覆盖原安装目录后重启；便携版继续原地替换裸 EXE。Hexaram 当前客户端读取自己的 GitHub Releases API，失败后读取 `hexaram-releases.json`，继续兼容 0.9.0 / 0.9.1 便携客户端。发布时同时生成 RA 格式的 `latest.json`：`platforms.windows-x86_64` 对应签名安装包，扩展 `portable.windows-x86_64` 对应签名裸 EXE。当前客户端未改用官方 updater 的 `check()`，仅提供协议兼容清单，避免破坏已有更新通道。不会读取 RA 仓库或使用 RA 的签名密钥。
 
-`.github/workflows/release.yml` 已替换上游发布流程，只向 `doujiaoshaorou/hexaram` 发布 Windows 两类包。推送 `v*` tag 会构建、签名、验证上传附件后发布；手动运行默认生成草稿，可显式选择发布。使用它之前需由维护者配置**既有 Hexaram 私钥**为仓库 Actions secret `TAURI_SIGNING_PRIVATE_KEY`，如有密码则另设 `TAURI_SIGNING_KEY_PASSWORD`。不能临时生成新密钥，否则旧客户端无法更新。本次仍使用本地保管的私钥发布；没有将私钥上传到 GitHub。未配置 secret 的 tag 发布会明确失败，不能生成缺签名的正式版。发布说明读取 `docs/releases/<版本>.md` 或手动输入。
+`.github/workflows/release.yml` 已替换上游发布流程，只向 `doujiaoshaorou/hexaram` 发布 Windows 两类包。推送 `v*` tag 会构建、签名、验证上传附件后发布；手动运行默认生成草稿，可显式选择发布。版本已有草稿或正式 Release 时跳过重复构建，兼容本地发布脚本创建 tag 触发的 Actions，不覆盖附件。使用它之前需由维护者配置**既有 Hexaram 私钥**为仓库 Actions secret `TAURI_SIGNING_PRIVATE_KEY`，如有密码则另设 `TAURI_SIGNING_KEY_PASSWORD`。不能临时生成新密钥，否则旧客户端无法更新。本次仍使用本地保管的私钥发布；没有将私钥上传到 GitHub。未配置 secret 的新版本 tag 发布会明确失败，不能生成缺签名的正式版。发布说明读取 `docs/releases/<版本>.md` 或手动输入。
 
 `.github/workflows/hexaram-windows.yml` 可在不配置签名密钥时生成构建附件，供开发验证。本仓库不运行上游 GitCode 镜像和公告定时发布任务。
 
