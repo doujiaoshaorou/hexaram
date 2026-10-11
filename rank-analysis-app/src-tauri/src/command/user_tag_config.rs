@@ -86,15 +86,50 @@ fn qualified_counts(games: &[&crate::lcu::api::match_history::Game], criteria: &
     (hits,valid)
 }
 
+/// 先按时间倒序取最近窗口，再应用逐场筛选；判定、名称和说明共用此样本。
+fn filtered_history_games<'a>(
+    history: &'a MatchHistory,
+    filters: &[MatchFilter],
+) -> Vec<&'a crate::lcu::api::match_history::Game> {
+    let mut games: Vec<_> = history.games.games.iter().collect();
+    games.sort_by(|a, b| b.game_creation_date.cmp(&a.game_creation_date));
+    if let Some(limit) = filters
+        .iter()
+        .filter_map(|filter| match filter {
+            MatchFilter::Recent { count } => Some((*count).max(0) as usize),
+            _ => None,
+        })
+        .min()
+    {
+        games.truncate(limit);
+    }
+    games.retain(|game| filters.iter().all(|filter| match_filter(game, filter)));
+    games
+}
+
+/// 只数从最新一场开始的连续结果，遇到相反结果或缺失胜负立即停止。
+fn current_streak_count(
+    games: &[&crate::lcu::api::match_history::Game],
+    kind: &StreakType,
+) -> i32 {
+    let win = matches!(kind, StreakType::Win);
+    games
+        .iter()
+        .take_while(|game| game.participants.first().is_some_and(|p| p.stats.win == win))
+        .count() as i32
+}
+
 fn sample_description(condition: &TagCondition, history: &MatchHistory) -> String {
     match condition {
         TagCondition::And { conditions } | TagCondition::Or { conditions } => conditions.iter().map(|c| sample_description(c,history)).filter(|s| !s.is_empty()).collect::<Vec<_>>().join("；"),
         TagCondition::History { filters, refresh } => {
             let limit=filters.iter().filter_map(|f|if let MatchFilter::Recent{count}=f {Some((*count).max(0) as usize)}else{None}).min().unwrap_or(history.games.games.len());
-            let games:Vec<_>=history.games.games.iter().take(limit).filter(|g|filters.iter().all(|f|match_filter(g,f))).collect();
+            let games = filtered_history_games(history, filters);
             if let MatchRefresh::QualifiedRatio { criteria,alternatives,.. }=refresh {
                 let(hits,valid)=qualified_counts(&games,criteria,alternatives);
                 format!("近{}场窗口：{} / {} 场命中（{:.1}%），缺失数据{}场",limit,hits,valid,100.0*hits as f64/valid.max(1) as f64,games.len()-valid)
+            } else if let MatchRefresh::Streak { kind, .. } = refresh {
+                format!("从最新一场起当前连续{}场", current_streak_count(&games, kind))
             } else { format!("近{}场窗口，筛选后{}场",limit,games.len()) }
         },
         _=>String::new(),
@@ -554,7 +589,7 @@ impl TagConfig {
         };
 
         if context.evaluate_node(&self.condition) {
-            let display_name = self.format_name(match_history);
+            let display_name = self.format_name(&context);
             Some(RankTag {
                 good: self.good,
                 tag_name: display_name,
@@ -571,19 +606,15 @@ impl TagConfig {
     ///
     /// # 参数
     ///
-    /// - `match_history`: 对局历史记录
+    /// - `context`: 与标签判定相同的对局历史和条件上下文
     ///
     /// # 返回值
     ///
     /// 格式化后的标签名称
-    fn format_name(&self, match_history: &MatchHistory) -> String {
+    fn format_name(&self, context: &EvalContext<'_>) -> String {
         if self.name.contains("{N}") {
-            // Best effort dynamic naming.
-            // In the new tree structure, it's hard to know WHICH condition triggered and what the value is.
-            // We'll fall back to global streak for {N} placeholder for now, or could try to inspect the condition tree.
-            // For simple migration, simple implementation:
-            let streak = get_current_streak(match_history, self.id.starts_with("hexaram_"));
-            let n_cn = number_to_chinese(streak.abs());
+            let streak = context.matched_streak_count(&self.condition).unwrap_or(0);
+            let n_cn = number_to_chinese(streak);
             return self.name.replace("{N}", &n_cn);
         }
         self.name.clone()
@@ -605,6 +636,24 @@ struct EvalContext<'a> {
 }
 
 impl EvalContext<'_> {
+    /// 从命中的连胜/连败条件取得显示数字，使用该条件自身的窗口与筛选器。
+    fn matched_streak_count(&self, condition: &TagCondition) -> Option<i32> {
+        match condition {
+            TagCondition::History {
+                filters,
+                refresh: MatchRefresh::Streak { min, kind },
+            } => {
+                let count = current_streak_count(&filtered_history_games(self.history, filters), kind);
+                (count >= *min).then_some(count)
+            }
+            TagCondition::And { conditions } | TagCondition::Or { conditions } => conditions
+                .iter()
+                .filter(|child| self.evaluate_node(child))
+                .find_map(|child| self.matched_streak_count(child)),
+            _ => None,
+        }
+    }
+
     /// 递归评估条件树节点。
     ///
     /// # 参数
@@ -656,32 +705,7 @@ impl EvalContext<'_> {
     ///
     /// 条件是否满足
     fn evaluate_history(&self, filters: &[MatchFilter], refresh: &MatchRefresh) -> bool {
-        // Recent 是位置性筛选，逐场谓词拿不到位置信息，须先切片
-        let recent_limit = filters
-            .iter()
-            .filter_map(|f| match f {
-                MatchFilter::Recent { count } => Some((*count).max(0) as usize),
-                _ => None,
-            })
-            .min();
-        let all_games = &self.history.games.games;
-        let base = match recent_limit {
-            Some(n) => &all_games[..n.min(all_games.len())],
-            None => &all_games[..],
-        };
-        let games_iter = base.iter().filter(|g| {
-            for f in filters {
-                if !match_filter(g, f) {
-                    return false;
-                }
-            }
-            true
-        });
-
-        // Collecting because some aggregations (Streak) need order/random access or double pass
-        // But Streak just needs iterator if carefully written.
-        // For simplicity and small size (20-100 games), collecting references is fine.
-        let games: Vec<_> = games_iter.collect();
+        let games = filtered_history_games(self.history, filters);
 
         match refresh {
             MatchRefresh::QualifiedRatio { criteria, alternatives, min_games, min_matches, op, value } => {
@@ -755,31 +779,7 @@ impl EvalContext<'_> {
                 op.check(min_val, *value)
             }
             MatchRefresh::Streak { min, kind } => {
-                // Calculate streak on the FILTERED games
-                let mut current_streak = 0;
-
-                // Games are typically ordered Newest -> Oldest in match history
-                for g in games {
-                    let win = extract_game_metric(g, "win") > 0.5;
-
-                    match kind {
-                        StreakType::Win => {
-                            if win {
-                                current_streak += 1;
-                            } else {
-                                break;
-                            }
-                        }
-                        StreakType::Loss => {
-                            if !win {
-                                current_streak += 1;
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                }
-                current_streak >= *min
+                current_streak_count(&games, kind) >= *min
             }
             MatchRefresh::DistinctChampions { op, value } => {
                 if games.is_empty() {
@@ -939,49 +939,6 @@ fn extract_game_metric(game: &crate::lcu::api::match_history::Game, metric: &str
             }
         }
         _ => f64::NAN,
-    }
-}
-
-// Keeping helper for {N} usage
-
-/// 计算当前连胜/连败数。
-///
-/// 只考虑排位赛（单双排和灵活组排）。
-///
-/// # 参数
-///
-/// - `match_history`: 对局历史记录
-///
-/// # 返回值
-///
-/// 正数表示连胜场数，负数表示连败场数，0 表示无连胜/连败
-fn get_current_streak(match_history: &MatchHistory, mayhem: bool) -> i32 {
-    let mut s = 0;
-    let mut is_win = None;
-    for g in &match_history.games.games {
-        // Global streak usually implies ranked? Or just general?
-        // Keeping behavior simple: Solo/Flex
-        if !(if mayhem { [2400, 2410, 2450].contains(&g.queue_id) } else { [420, 440].contains(&g.queue_id) }) {
-            continue;
-        }
-
-        if g.participants.is_empty() {
-            continue;
-        }
-        let win = g.participants[0].stats.win;
-
-        if is_win.is_none() {
-            is_win = Some(win);
-        }
-        if Some(win) != is_win {
-            break;
-        }
-        s += 1;
-    }
-    match is_win {
-        Some(true) => s,
-        Some(false) => -s,
-        None => 0,
     }
 }
 
