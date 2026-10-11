@@ -1,4 +1,8 @@
 fn main() {
+    // A release executable must embed assets, never depend on the Vite dev server.
+    if std::env::var("PROFILE").as_deref() == Ok("release") && tauri_build::is_dev() {
+        panic!("Release requires Tauri production assets. Run npm run tauri build -- --no-bundle (or cargo build --release --features tauri/custom-protocol).");
+    }
     emit_app_version();
     // `SENTRY_DSN` 经 observability.rs 的 option_env! 在编译期烤进二进制；
     // env 变化时需触发 crate 重编，否则 cargo 会复用旧值。

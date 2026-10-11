@@ -28,3 +28,7 @@
 应用只接受本仓库的正式 Release，后台下载后校验内置公钥签名；安装前再次校验。默认自动检查开启、自动下载关闭。后台只下载，不自动重启。选人/游戏进行中拒绝安装。0.8.1 及更早版本尚未接入，需要先手动升级。
 
 发布附件同时保留源码 ZIP、SHA256SUMS、LICENSE 和 THIRD_PARTY_NOTICES.md。下载 EXE 不包含个人配置、战绩或 AI Key。GitHub Actions 的手动构建工作流只生成构建产物，未配置私钥时不会生成可自动更新的签名包，也不会自动发布。
+
+### 生产资源校验
+
+不要把普通 `cargo build --release` 的结果当成便携包：未启用 `tauri/custom-protocol` 时，它仍会连接 `devUrl`。`build.rs` 会拒绝这种 release 构建。使用上述 Tauri CLI 命令，之后关闭 Vite，启动实际 EXE，确认界面及设置页能够加载，再交付。
