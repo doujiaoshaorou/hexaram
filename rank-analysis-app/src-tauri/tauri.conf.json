@@ -1,5 +1,5 @@
 {
-  "productName": "Hexaram",
+  "productName": "海斗助手",
   "version": "0.9.2",
   "identifier": "com.hexaram.ra.app",
   "build": {
@@ -31,6 +31,9 @@
   },
   "bundle": {
     "active": true,
+    "publisher": "doujiaoshaorou",
+    "homepage": "https://github.com/doujiaoshaorou/hexaram",
+    "shortDescription": "海克斯大乱斗助手",
     "targets": [
       "nsis"
     ],
@@ -56,8 +59,10 @@
         ]
       },
       "nsis": {
+        "template": "windows/installer.nsi",
         "installerIcon": "icons/ico.ico",
         "installMode": "currentUser",
+        "installerHooks": "windows/hooks.nsh",
         "languages": [
           "SimpChinese"
         ]

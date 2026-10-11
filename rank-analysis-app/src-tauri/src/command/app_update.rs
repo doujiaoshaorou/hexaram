@@ -1,5 +1,7 @@
 //! Hexaram Releases: bounded downloads, independent signatures, explicit restart.
-use super::portable_update::{derive_side_paths, replace_exe_in_place, verify_portable_signature};
+use super::portable_update::{
+    derive_side_paths, install_form, replace_exe_in_place, verify_portable_signature, InstallForm,
+};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, time::Duration};
@@ -51,10 +53,26 @@ pub struct Progress {
     received: usize,
     total: Option<u64>,
 }
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum UpdateKind {
+    #[default]
+    Portable,
+    Installer,
+}
+fn update_kind() -> UpdateKind {
+    match install_form() {
+        InstallForm::Installer => UpdateKind::Installer,
+        _ => UpdateKind::Portable,
+    }
+}
 #[derive(Serialize, Deserialize)]
 struct Cached {
     version: String,
     signature: String,
+    // Old portable clients did not record the kind. Never interpret their raw exe as setup.
+    #[serde(default)]
+    kind: UpdateKind,
 }
 
 fn version_parts(s: &str) -> Option<[u32; 3]> {
@@ -77,10 +95,13 @@ fn trusted_release_url(s: &str, tag: &str, file: Option<&str>) -> bool {
     };
     s == expected
 }
-fn assets(r: &Release) -> Option<(&Asset, &Asset)> {
+fn assets(r: &Release, kind: UpdateKind) -> Option<(&Asset, &Asset)> {
     let v = r.tag_name.strip_prefix('v')?;
     version_parts(v)?;
-    let filename = format!("Hexaram-{v}-win-x64.exe");
+    let filename = match kind {
+        UpdateKind::Portable => format!("Hexaram-{v}-win-x64.exe"),
+        UpdateKind::Installer => format!("Hexaram-{v}-win-x64-setup.exe"),
+    };
     let signature = format!("{filename}.sig");
     let exe = r.assets.iter().find(|a| {
         a.name == filename
@@ -92,7 +113,7 @@ fn assets(r: &Release) -> Option<(&Asset, &Asset)> {
     })?;
     Some((exe, sig))
 }
-fn info(r: &Release) -> Option<ReleaseInfo> {
+fn info(r: &Release, kind: UpdateKind) -> Option<ReleaseInfo> {
     if r.draft
         || r.prerelease
         || !r.tag_name.starts_with('v')
@@ -107,7 +128,7 @@ fn info(r: &Release) -> Option<ReleaseInfo> {
         notes: r.body.clone().unwrap_or_default(),
         url: r.html_url.clone(),
         published_at: r.published_at.clone().unwrap_or_default(),
-        downloadable: assets(r).is_some(),
+        downloadable: assets(r, kind).is_some(),
     })
 }
 fn client() -> Result<reqwest::Client, String> {
@@ -247,11 +268,14 @@ async fn fetch_releases() -> Result<Vec<Release>, String> {
 pub async fn hex_check_updates(app: tauri::AppHandle) -> Result<Overview, String> {
     let current = app.package_info().version.to_string();
     let releases = fetch_releases().await?;
-    let mut list: Vec<_> = releases.iter().filter_map(info).collect();
+    let kind = update_kind();
+    let mut list: Vec<_> = releases.iter().filter_map(|r| info(r, kind)).collect();
     list.sort_by(|a, b| version_parts(&b.version).cmp(&version_parts(&a.version)));
     let latest = list.first().cloned();
     let ready_version = read_cached()
-        .filter(|c| newer(&c.version, &current) && cache_dir().join("ready.exe").is_file())
+        .filter(|c| {
+            c.kind == kind && newer(&c.version, &current) && cache_dir().join("ready.exe").is_file()
+        })
         .map(|c| c.version);
     Ok(Overview {
         current_version: current,
@@ -278,10 +302,12 @@ pub async fn hex_download_update(
         .into_iter()
         .find(|r| r.tag_name == format!("v{version}"))
         .ok_or("未找到此正式版本，请重新检查更新")?;
-    if info(&release).is_none() || release.tag_name != format!("v{version}") {
+    let kind = update_kind();
+    if info(&release, kind).is_none() || release.tag_name != format!("v{version}") {
         return Err("不是本项目的正式版本".into());
     }
-    let (exe, sig) = assets(&release).ok_or("此版本没有签名更新包，请查看 Release 手动下载")?;
+    let (exe, sig) =
+        assets(&release, kind).ok_or("此版本没有对应的签名更新包，请查看 Release 手动下载")?;
     let signature = String::from_utf8(fetch(&sig.browser_download_url, 16384, None).await?)
         .map_err(|_| "签名格式错误")?;
     let bytes = fetch(&exe.browser_download_url, MAX_EXE, Some(&on_event)).await?;
@@ -299,6 +325,7 @@ pub async fn hex_download_update(
         serde_json::to_vec(&Cached {
             version: version.clone(),
             signature,
+            kind,
         })
         .map_err(|e| e.to_string())?,
     )
@@ -312,7 +339,7 @@ pub async fn hex_install_update(app: tauri::AppHandle) -> Result<(), String> {
         .try_lock()
         .map_err(|_| "更新任务已在进行".to_string())?;
     if !cfg!(windows) {
-        return Err("自动安装仅支持 Windows 便携版".into());
+        return Err("自动安装仅支持 Windows".into());
     }
     if matches!(
         crate::lcu::api::phase::cached_phase().as_str(),
@@ -321,6 +348,9 @@ pub async fn hex_install_update(app: tauri::AppHandle) -> Result<(), String> {
         return Err("选人或游戏进行中，请对局结束后再重启更新".into());
     }
     let cached = read_cached().ok_or("请先下载新版本")?;
+    if cached.kind != update_kind() {
+        return Err("更新包与当前安装方式不匹配，请重新下载".into());
+    }
     if !newer(&cached.version, &app.package_info().version.to_string()) {
         return Err("缓存不是更新版本，请重新检查".into());
     }
@@ -328,6 +358,13 @@ pub async fn hex_install_update(app: tauri::AppHandle) -> Result<(), String> {
         std::fs::read(cache_dir().join("ready.exe")).map_err(|_| "更新文件不存在，请重新下载")?;
     verify_portable_signature(&bytes, &cached.signature, &pubkey(&app)?)?;
     let exe = std::env::current_exe().map_err(|_| "无法定位当前程序")?;
+    if cached.kind == UpdateKind::Installer {
+        launch_installer(&cache_dir().join("ready.exe"), &exe)?;
+        // Keep the cache until a successful upgrade makes its version obsolete.
+        // A cancelled/failed installer can be retried without downloading again.
+        app.exit(0);
+        return Ok(());
+    }
     let paths = derive_side_paths(&exe);
     replace_exe_in_place(&paths, &bytes)?;
     let mut command = std::process::Command::new(&paths.target);
@@ -342,6 +379,31 @@ pub async fn hex_install_update(app: tauri::AppHandle) -> Result<(), String> {
     let _ = std::fs::remove_file(cache_dir().join("ready.json"));
     app.exit(0);
     Ok(())
+}
+
+fn launch_installer(
+    installer: &std::path::Path,
+    current_exe: &std::path::Path,
+) -> Result<(), String> {
+    let dir = current_exe.parent().ok_or("无法定位安装目录")?;
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // NSIS requires /D last and unquoted, including paths containing spaces.
+        // /UPDATE preserves shortcuts and user data; /R restarts only after success.
+        let mut args = std::ffi::OsString::from("/P /R /UPDATE /D=");
+        args.push(dir);
+        std::process::Command::new(installer)
+            .raw_arg(args)
+            .spawn()
+            .map_err(|_| "安装程序启动失败，请重试或手动运行安装包".to_string())?;
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (installer, dir);
+        Err("自动安装仅支持 Windows".into())
+    }
 }
 
 #[cfg(test)]
@@ -366,24 +428,30 @@ mod tests {
         let releases = fetch_releases().await.unwrap();
         let r = releases
             .iter()
-            .find(|r| assets(r).is_some() && info(r).is_some())
-            .expect("signed release");
-        let (exe, sig) = assets(r).unwrap();
-        let signature =
-            String::from_utf8(fetch(&sig.browser_download_url, 16384, None).await.unwrap())
-                .unwrap();
-        let bytes = fetch(&exe.browser_download_url, MAX_EXE, None)
-            .await
-            .unwrap();
+            .filter(|r| info(r, UpdateKind::Portable).is_some())
+            .max_by_key(|r| version_parts(&r.tag_name))
+            .expect("latest stable release");
+        if let Ok(expected) = std::env::var("HEXARAM_TEST_RELEASE_VERSION") {
+            assert_eq!(r.tag_name, format!("v{expected}"));
+        }
         let config: serde_json::Value =
             serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
-        verify_portable_signature(
-            &bytes,
-            &signature,
-            config["plugins"]["updater"]["pubkey"].as_str().unwrap(),
-        )
-        .unwrap();
-        assert!(bytes.starts_with(b"MZ"));
+        for kind in [UpdateKind::Portable, UpdateKind::Installer] {
+            let (exe, sig) = assets(r, kind).expect("latest release must sign both install forms");
+            let signature =
+                String::from_utf8(fetch(&sig.browser_download_url, 16384, None).await.unwrap())
+                    .unwrap();
+            let bytes = fetch(&exe.browser_download_url, MAX_EXE, None)
+                .await
+                .unwrap();
+            verify_portable_signature(
+                &bytes,
+                &signature,
+                config["plugins"]["updater"]["pubkey"].as_str().unwrap(),
+            )
+            .unwrap();
+            assert!(bytes.starts_with(b"MZ"));
+        }
     }
     #[test]
     fn versions_are_numeric_and_stable_only() {
@@ -421,11 +489,68 @@ mod tests {
             prerelease: false,
             assets: vec![],
         };
-        assert!(!info(&r).unwrap().downloadable);
+        assert!(!info(&r, UpdateKind::Portable).unwrap().downloadable);
         r.prerelease = true;
-        assert!(info(&r).is_none());
+        assert!(info(&r, UpdateKind::Portable).is_none());
         r.prerelease = false;
         r.draft = true;
-        assert!(info(&r).is_none());
+        assert!(info(&r, UpdateKind::Portable).is_none());
+    }
+
+    #[test]
+    fn selects_only_signed_assets_for_the_current_install_form() {
+        let mut release = Release {
+            tag_name: "v0.9.2".into(),
+            name: None,
+            body: None,
+            html_url: format!("{REPO}/releases/tag/v0.9.2"),
+            published_at: None,
+            draft: false,
+            prerelease: false,
+            assets: vec![],
+        };
+        let asset = |name: &str| Asset {
+            name: name.into(),
+            browser_download_url: format!("{REPO}/releases/download/v0.9.2/{name}"),
+        };
+        release.assets = vec![
+            asset("Hexaram-0.9.2-win-x64.exe"),
+            asset("Hexaram-0.9.2-win-x64.exe.sig"),
+        ];
+        assert!(assets(&release, UpdateKind::Installer).is_none());
+        release
+            .assets
+            .push(asset("Hexaram-0.9.2-win-x64-setup.exe"));
+        assert!(assets(&release, UpdateKind::Installer).is_none());
+        release
+            .assets
+            .push(asset("Hexaram-0.9.2-win-x64-setup.exe.sig"));
+        assert!(assets(&release, UpdateKind::Portable)
+            .unwrap()
+            .0
+            .name
+            .ends_with("-x64.exe"));
+        assert!(assets(&release, UpdateKind::Installer)
+            .unwrap()
+            .0
+            .name
+            .ends_with("-setup.exe"));
+        release.assets.last_mut().unwrap().browser_download_url =
+            "https://example.com/setup.sig".into();
+        assert!(assets(&release, UpdateKind::Installer).is_none());
+    }
+
+    #[test]
+    fn legacy_cache_is_portable_and_installer_cache_round_trips() {
+        let legacy: Cached =
+            serde_json::from_str(r#"{"version":"0.9.2","signature":"test"}"#).unwrap();
+        assert_eq!(legacy.kind, UpdateKind::Portable);
+        let installer = Cached {
+            kind: UpdateKind::Installer,
+            ..legacy
+        };
+        let loaded: Cached =
+            serde_json::from_slice(&serde_json::to_vec(&installer).unwrap()).unwrap();
+        assert_eq!(loaded.kind, UpdateKind::Installer);
     }
 }

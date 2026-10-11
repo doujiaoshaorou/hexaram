@@ -1,0 +1,87 @@
+name: Release Hexaram Windows
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Committed app version, e.g. 0.9.3'
+        required: true
+      publish:
+        description: 'Publish after all uploaded assets have been verified'
+        type: boolean
+        default: false
+      notes:
+        description: 'Release notes (defaults to docs/releases/<version>.md)'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hexaram-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'doujiaoshaorou/hexaram'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: rank-analysis-app/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Validate version and signing configuration
+        shell: pwsh
+        env:
+          RELEASE_REF_TYPE: ${{ github.ref_type }}
+          RELEASE_REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          $version = if ($env:RELEASE_REF_TYPE -eq 'tag') { $env:RELEASE_REF_NAME -replace '^v', '' } else { $env:INPUT_VERSION -replace '^v', '' }
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'A stable three-part version is required' }
+          $appVersion = (Get-Content rank-analysis-app/package.json -Raw | ConvertFrom-Json).version
+          $tauriVersion = (Get-Content rank-analysis-app/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ($version -ne $appVersion -or $version -ne $tauriVersion) { throw 'Commit the requested version before releasing' }
+          if (!$env:TAURI_SIGNING_PRIVATE_KEY) { throw 'Configure the existing Hexaram TAURI_SIGNING_PRIVATE_KEY secret, or publish using the local signing script' }
+          "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+      - name: Install and validate frontend
+        working-directory: rank-analysis-app
+        run: |
+          npm ci
+          npm run typecheck
+          npm test -- src/composables/useAppUpdate.spec.ts src/components/__tests__/Header.updatePill.spec.ts
+      - name: Build portable and installer
+        shell: pwsh
+        run: ./scripts/build-windows.ps1 -OutputDirectory .tools/windows-release
+      - name: Prepare release notes
+        shell: pwsh
+        env:
+          RELEASE_NOTES: ${{ inputs.notes }}
+        run: |
+          $file = "docs/releases/$env:RELEASE_VERSION.md"
+          if ($env:RELEASE_NOTES) { Set-Content .tools/release-notes.md $env:RELEASE_NOTES -Encoding utf8 }
+          elseif (Test-Path $file) { Copy-Item $file .tools/release-notes.md }
+          else { throw "Provide release notes or commit $file" }
+      - name: Sign, upload, verify and optionally publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
+          PUBLISH_RELEASE: ${{ github.event_name == 'push' || inputs.publish }}
+        run: |
+          ./scripts/publish-release.ps1 -Version $env:RELEASE_VERSION -ExePath ".tools/windows-release/Hexaram-$env:RELEASE_VERSION-win-x64.exe" -InstallerPath ".tools/windows-release/Hexaram-$env:RELEASE_VERSION-win-x64-setup.exe" -NotesPath .tools/release-notes.md -OutputDirectory .tools/published-release -Publish:($env:PUBLISH_RELEASE -eq 'true')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Hexaram-Windows-release
+          path: .tools/published-release/*.*
+          if-no-files-found: ignore

@@ -51,12 +51,14 @@ vi.mock('@renderer/composables/useGameState', async () => {
 
 const mockAvailableUpdate = ref<{ version: string } | null>(null)
 const mockCheckForUpdates = vi.fn()
+const mockBackgroundCheck = vi.fn()
 const mockShowUpdateDialog = vi.fn()
 vi.mock('@renderer/composables/useAppUpdate', () => ({
   useAppUpdate: () => ({
     checking: ref(false),
     availableUpdate: mockAvailableUpdate,
     checkForUpdates: mockCheckForUpdates,
+    backgroundCheck: mockBackgroundCheck,
     showUpdateDialog: mockShowUpdateDialog
   })
 }))
@@ -73,6 +75,7 @@ describe('Header 顶栏升级药丸', () => {
     setActivePinia(createPinia())
     mockAvailableUpdate.value = null
     mockCheckForUpdates.mockClear()
+    mockBackgroundCheck.mockClear()
     mockShowUpdateDialog.mockClear()
     mockConnected.value = false
   })
@@ -113,6 +116,7 @@ describe('Header 启动静默检查', () => {
     setActivePinia(createPinia())
     mockAvailableUpdate.value = null
     mockCheckForUpdates.mockClear()
+    mockBackgroundCheck.mockClear()
     mockConnected.value = false
     vi.useFakeTimers()
   })
@@ -127,11 +131,10 @@ describe('Header 启动静默检查', () => {
     await nextTick()
 
     vi.advanceTimersByTime(GATE_SETTLE_MS - 1)
-    expect(mockCheckForUpdates).not.toHaveBeenCalled()
+    expect(mockBackgroundCheck).not.toHaveBeenCalled()
 
     vi.advanceTimersByTime(1)
-    expect(mockCheckForUpdates).toHaveBeenCalledTimes(1)
-    expect(mockCheckForUpdates).toHaveBeenCalledWith('silent')
+    expect(mockBackgroundCheck).toHaveBeenCalledTimes(1)
     w.unmount()
   })
 
@@ -140,11 +143,10 @@ describe('Header 启动静默检查', () => {
     await nextTick()
 
     vi.advanceTimersByTime(GATE_FALLBACK_MS - 1)
-    expect(mockCheckForUpdates).not.toHaveBeenCalled()
+    expect(mockBackgroundCheck).not.toHaveBeenCalled()
 
     vi.advanceTimersByTime(1 + GATE_SETTLE_MS)
-    expect(mockCheckForUpdates).toHaveBeenCalledTimes(1)
-    expect(mockCheckForUpdates).toHaveBeenCalledWith('silent')
+    expect(mockBackgroundCheck).toHaveBeenCalledTimes(1)
     w.unmount()
   })
 
@@ -156,11 +158,11 @@ describe('Header 启动静默检查', () => {
     mockConnected.value = true
     await nextTick()
     vi.advanceTimersByTime(GATE_SETTLE_MS)
-    expect(mockCheckForUpdates).toHaveBeenCalledTimes(1)
+    expect(mockBackgroundCheck).toHaveBeenCalledTimes(1)
 
     // 时间推进到原本的兜底触发点，不应该再触发第二次
     vi.advanceTimersByTime(GATE_FALLBACK_MS)
-    expect(mockCheckForUpdates).toHaveBeenCalledTimes(1)
+    expect(mockBackgroundCheck).toHaveBeenCalledTimes(1)
     w.unmount()
   })
 })
