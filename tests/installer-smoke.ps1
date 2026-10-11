@@ -16,6 +16,7 @@ $installed = Join-Path $localAppData 'Hexaram'
 $desktop = Join-Path $qa 'desktop'
 $startMenu = Join-Path $qa 'start-menu'
 $product = "Hexaram Installer QA $id"
+$qaBinaryName = "hexaram-installer-qa-$id"
 New-Item -ItemType Directory -Path $qa,$source,$desktop,$startMenu -Force | Out-Null
 foreach ($folder in @('hexaram-data/nested', 'user-data/archives')) {
   New-Item -ItemType Directory -Path (Join-Path $source $folder) -Force | Out-Null
@@ -32,6 +33,7 @@ foreach ($name in $fixtures.Keys) { [IO.File]::WriteAllText((Join-Path $source $
 # identity and shortcut folders. No installed app is launched during this test.
 $template = $template.Replace('!define MANUFACTURER "doujiaoshaorou"', '!define MANUFACTURER "HexaramInstallerQA"')
 $template = $template.Replace('!define PRODUCTNAME "海斗助手"', "!define PRODUCTNAME `"$product`"")
+$template = $template.Replace('!define MAINBINARYNAME "hexaram"', "!define MAINBINARYNAME `"$qaBinaryName`"")
 $template = $template.Replace('!define BUNDLEID "com.hexaram.ra.app"', "!define BUNDLEID `"com.hexaram.installerqa.$id`"")
 $template = $template.Replace('$DESKTOP', $desktop).Replace('$SMPROGRAMS', $startMenu)
 $template = $template.Replace('$LOCALAPPDATA', $localAppData)
@@ -39,7 +41,7 @@ $template = $template.Replace('!define INSTALLWEBVIEW2MODE "downloadBootstrapper
 foreach ($file in @('utils.nsh','FileAssociation.nsh','SimpChinese.nsh')) {
   Copy-Item -LiteralPath (Join-Path $templateDir $file) -Destination $qa
 }
-$binary = Join-Path $qa 'hexaram.exe'
+$binary = Join-Path $qa "$qaBinaryName.exe"
 $bytes = [IO.File]::ReadAllBytes((Join-Path $app 'target/release/hexaram.exe'))
 $token = [Text.Encoding]::ASCII.GetBytes('__TAURI_BUNDLE_TYPE_VAR_UNK')
 $patched = [Text.Encoding]::ASCII.GetBytes('__TAURI_BUNDLE_TYPE_VAR_NSS')
@@ -79,7 +81,7 @@ function Assert-Shortcuts {
   foreach ($folder in @($desktop,$startMenu)) {
     $path = Join-Path $folder "$product.lnk"
     if (!(Test-Path -LiteralPath $path)) { throw 'Missing shortcut' }
-    if ($shell.CreateShortcut($path).TargetPath -ne (Join-Path $installed 'hexaram.exe')) { throw 'Shortcut target changed' }
+    if ($shell.CreateShortcut($path).TargetPath -ne (Join-Path $installed "$qaBinaryName.exe")) { throw 'Shortcut target changed' }
   }
 }
 $first = Join-Path $source 'first-setup.exe'
@@ -97,7 +99,7 @@ Assert-Data $fixtures
 Assert-Shortcuts
 $key = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$product"
 if ((Get-ItemProperty -LiteralPath $key).DisplayVersion -ne $nextVersion) { throw 'Upgrade did not update uninstall metadata' }
-if (![Text.Encoding]::GetEncoding(28591).GetString([IO.File]::ReadAllBytes((Join-Path $installed 'hexaram.exe'))).Contains('__TAURI_BUNDLE_TYPE_VAR_NSS')) { throw 'Installed binary lost its installer marker' }
+if (![Text.Encoding]::GetEncoding(28591).GetString([IO.File]::ReadAllBytes((Join-Path $installed "$qaBinaryName.exe"))).Contains('__TAURI_BUNDLE_TYPE_VAR_NSS')) { throw 'Installed binary lost its installer marker' }
 Write-Output 'PASS: cross-version overlay upgrade retains data, shortcuts and installer marker'
 Run-QAInstaller $next "/S /D=$installed"
 Assert-Data $fixtures
@@ -105,7 +107,7 @@ Assert-Shortcuts
 Write-Output 'PASS: manual reinstall retains installed data'
 Run-QAInstaller (Join-Path $installed 'uninstall.exe') "/S _?=$installed"
 Assert-Data $fixtures
-if (Test-Path -LiteralPath (Join-Path $installed 'hexaram.exe')) { throw 'Uninstall left the executable' }
+if (Test-Path -LiteralPath (Join-Path $installed "$qaBinaryName.exe")) { throw 'Uninstall left the executable' }
 if (Test-Path -LiteralPath $key) { throw 'Uninstall left its QA registry key' }
 foreach ($folder in @($desktop,$startMenu)) {
   if (Test-Path -LiteralPath (Join-Path $folder "$product.lnk")) { throw 'Uninstall left a shortcut' }
