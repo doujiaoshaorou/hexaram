@@ -16,6 +16,100 @@ fn recent_window_and_modes_do_not_mix() {
     let mut custom=t.clone();custom.id="custom".into();custom.is_default=false;
     assert!(custom.evaluate(&mixed,0,None).is_none());
 }
+
+#[test]
+fn streak_tags_only_count_the_latest_unbroken_results() {
+    for (id, win, expected) in [
+        ("hexaram_streak_win", true, "三连胜"),
+        ("hexaram_streak_loss", false, "三连败"),
+    ] {
+        let tag = default_tag(id);
+        // Latest -> oldest: a past streak does not describe the current result.
+        let history = make_history(vec![
+            make_game(1, !win, 2400),
+            make_game(1, win, 2400),
+            make_game(1, win, 2400),
+            make_game(1, win, 2400),
+        ]);
+        assert!(tag.evaluate(&history, 2400, None).is_none());
+        let history = make_history(vec![
+            make_game(1, win, 2400),
+            make_game(1, win, 2400),
+            make_game(1, !win, 2400),
+            make_game(1, win, 2400),
+            make_game(1, win, 2400),
+            make_game(1, win, 2400),
+        ]);
+        assert!(tag.evaluate(&history, 2400, None).is_none());
+        let history = make_history(vec![
+            make_game(1, win, 2400),
+            make_game(1, win, 2400),
+            make_game(1, win, 2400),
+            make_game(1, !win, 2400),
+            make_game(1, win, 2400),
+        ]);
+        assert_eq!(tag.evaluate(&history, 2400, None).unwrap().tag_name, expected);
+    }
+}
+
+#[test]
+fn streak_name_respects_the_same_recent_window_as_the_rule() {
+    for (id, win, expected) in [
+        ("hexaram_streak_win", true, "50连胜"),
+        ("hexaram_streak_loss", false, "50连败"),
+    ] {
+        let tag = default_tag(id);
+        let history = make_history(vec![make_game(1, win, 2400); 60]);
+        assert_eq!(tag.evaluate(&history, 2400, None).unwrap().tag_name, expected);
+    }
+}
+
+#[test]
+fn custom_streak_uses_chronological_results_and_its_own_queue() {
+    for win in [true, false] {
+        let mut tag = default_tag(if win { "hexaram_streak_win" } else { "hexaram_streak_loss" });
+        tag.id = "custom_streak".into();
+        tag.is_default = false;
+        tag.condition = TagCondition::History {
+            filters: vec![MatchFilter::Recent { count: 50 }, MatchFilter::Queue { ids: vec![2400] }],
+            refresh: MatchRefresh::Streak { min: 3, kind: if win { StreakType::Win } else { StreakType::Loss } },
+        };
+        let mut games: Vec<_> = (1..=4).map(|i| {
+            let mut game = make_game(1, if i == 4 { !win } else { win }, 2400);
+            game.game_creation_date = format!("2026-10-11T00:00:{i:02}Z");
+            game
+        }).collect();
+        // Input order must not turn an older run into the current streak.
+        assert!(tag.evaluate(&make_history(games.clone()), 2400, None).is_none());
+        games[3].participants[0].stats.win = win;
+        assert_eq!(tag.evaluate(&make_history(games), 2400, None).unwrap().tag_name, if win { "四连胜" } else { "四连败" });
+    }
+}
+
+#[test]
+fn streak_uses_the_latest_normal_game_of_each_mode() {
+    let mut remake = make_game(1, false, 2400);
+    remake.participants[0].stats.game_ended_in_early_surrender = true;
+    let history = make_history(vec![
+        remake,
+        make_game(1, false, 2410),
+        make_game(1, true, 2400),
+        make_game(1, false, 2410),
+        make_game(1, true, 2400),
+        make_game(1, false, 2410),
+        make_game(1, true, 2400),
+        make_game(1, false, 2400),
+        make_game(1, true, 2410),
+    ]);
+    let win = default_tag("hexaram_streak_win");
+    let loss = default_tag("hexaram_streak_loss");
+    assert_eq!(win.evaluate(&history, 2400, None).unwrap().tag_name, "三连胜");
+    assert!(loss.evaluate(&history, 2400, None).is_none());
+    assert_eq!(loss.evaluate(&history, 2410, None).unwrap().tag_name, "三连败");
+    assert!(win.evaluate(&history, 2410, None).is_none());
+    assert!(win.evaluate(&make_history(vec![]), 2400, None).is_none());
+    assert!(loss.evaluate(&make_history(vec![]), 2400, None).is_none());
+}
 #[test]
 fn allround_strict_win_boundary_diversity_and_unknown_roles() {
     let groups:Vec<Vec<i32>>=["Fighter","Marksman","Mage","Tank"].iter().map(|role|

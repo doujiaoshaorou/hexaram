@@ -72,7 +72,7 @@ jobs:
           npm ci
           npm run typecheck
           npm test -- src/composables/useAppUpdate.spec.ts src/components/__tests__/Header.updatePill.spec.ts
-      - name: Build portable and installer
+      - name: Build Windows installer
         if: env.RELEASE_EXISTS != 'true'
         shell: pwsh
         run: ./scripts/build-windows.ps1 -OutputDirectory .tools/windows-release
@@ -95,7 +95,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
           PUBLISH_RELEASE: ${{ github.event_name == 'push' || inputs.publish }}
         run: |
-          ./scripts/publish-release.ps1 -Version $env:RELEASE_VERSION -ExePath ".tools/windows-release/Hexaram-$env:RELEASE_VERSION-win-x64.exe" -InstallerPath ".tools/windows-release/Hexaram-$env:RELEASE_VERSION-win-x64-setup.exe" -NotesPath .tools/release-notes.md -OutputDirectory .tools/published-release -Publish:($env:PUBLISH_RELEASE -eq 'true')
+          ./scripts/publish-release.ps1 -Version $env:RELEASE_VERSION -InstallerPath ".tools/windows-release/Hexaram-$env:RELEASE_VERSION-win-x64-setup.exe" -NotesPath .tools/release-notes.md -OutputDirectory .tools/published-release -Publish:($env:PUBLISH_RELEASE -eq 'true')
       - uses: actions/upload-artifact@v4
         if: always() && env.RELEASE_EXISTS != 'true'
         with:

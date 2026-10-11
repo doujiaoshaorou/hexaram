@@ -45,8 +45,11 @@ $token = [Text.Encoding]::ASCII.GetBytes('__TAURI_BUNDLE_TYPE_VAR_UNK')
 $patched = [Text.Encoding]::ASCII.GetBytes('__TAURI_BUNDLE_TYPE_VAR_NSS')
 $text = [Text.Encoding]::GetEncoding(28591).GetString($bytes)
 $offset = $text.IndexOf('__TAURI_BUNDLE_TYPE_VAR_UNK', [StringComparison]::Ordinal)
-if ($offset -lt 0) { throw 'Expected the restored unbundled binary' }
-[Array]::Copy($patched,0,$bytes,$offset,$token.Length)
+if ($offset -ge 0) {
+  [Array]::Copy($patched,0,$bytes,$offset,$token.Length)
+} elseif (!$text.Contains('__TAURI_BUNDLE_TYPE_VAR_NSS')) {
+  throw 'Expected the Windows application binary'
+}
 [IO.File]::WriteAllBytes($binary,$bytes)
 $template = [regex]::Replace($template, '(?m)^!define MAINBINARYSRCPATH .*$', "!define MAINBINARYSRCPATH `"$binary`"")
 

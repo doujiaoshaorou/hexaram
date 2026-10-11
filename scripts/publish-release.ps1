@@ -1,6 +1,5 @@
 param(
   [Parameter(Mandatory)][string]$Version,
-  [Parameter(Mandatory)][string]$ExePath,
   [Parameter(Mandatory)][string]$InstallerPath,
   [string]$PrivateKeyPath,
   [Parameter(Mandatory)][string]$NotesPath,
@@ -16,8 +15,6 @@ $status = @(git -C $repo status --porcelain)
 if ($LASTEXITCODE -ne 0) { throw 'Run this script from a Git checkout' }
 if ($status.Count) { throw 'Commit source changes before packaging' }
 if (((Get-Content (Join-Path $repo 'rank-analysis-app/package.json') -Raw | ConvertFrom-Json).version) -ne $Version) { throw 'Source version mismatch' }
-$exe = Get-Item -LiteralPath $ExePath
-if ($exe.VersionInfo.ProductVersion -ne $Version) { throw 'Executable version mismatch' }
 $installer = Get-Item -LiteralPath $InstallerPath
 if ($installer.VersionInfo.ProductVersion -ne $Version) { throw 'Installer version mismatch' }
 $key = if ($PrivateKeyPath) { (Resolve-Path -LiteralPath $PrivateKeyPath).Path } else { $null }
@@ -35,15 +32,13 @@ foreach ($file in $files) {
 $out = [IO.Path]::GetFullPath($OutputDirectory)
 if ($out.StartsWith($repo + [IO.Path]::DirectorySeparatorChar) -and !$out.StartsWith((Join-Path $repo '.tools') + [IO.Path]::DirectorySeparatorChar)) { throw 'Use an output folder outside tracked source, or under .tools' }
 New-Item -ItemType Directory -Path $out -Force | Out-Null
-$asset = Join-Path $out "Hexaram-$Version-win-x64.exe"
-Copy-Item -LiteralPath $exe.FullName -Destination $asset
 $setupAsset = Join-Path $out "Hexaram-$Version-win-x64-setup.exe"
 Copy-Item -LiteralPath $installer.FullName -Destination $setupAsset
 $previousKeyPath = $env:TAURI_SIGNING_PRIVATE_KEY_PATH
 if ($key) { $env:TAURI_SIGNING_PRIVATE_KEY_PATH = $key }
 if (!$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD) { $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = '' }
 try {
-  foreach ($package in @($asset, $setupAsset)) {
+  foreach ($package in @($setupAsset)) {
     & node $TauriCliPath signer sign $package *> $null
     if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath ($package+'.sig'))) { throw 'Signing failed; check the local key/password' }
   }
@@ -64,14 +59,10 @@ $latest = [ordered]@{
     signature = [IO.File]::ReadAllText($setupAsset+'.sig').Trim()
     url = "$baseUrl/$([IO.Path]::GetFileName($setupAsset))"
   } }
-  portable = @{ 'windows-x86_64' = @{
-    signature = [IO.File]::ReadAllText($asset+'.sig').Trim()
-    url = "$baseUrl/$([IO.Path]::GetFileName($asset))"
-  } }
 }
 [IO.File]::WriteAllText($latestPath, (ConvertTo-Json -InputObject $latest -Depth 6))
 $sum = Join-Path $out "Hexaram-$Version-SHA256SUMS.txt"
-$packages = @($asset, ($asset+'.sig'), $setupAsset, ($setupAsset+'.sig'), $zip, $latestPath)
+$packages = @($setupAsset, ($setupAsset+'.sig'), $zip, $latestPath)
 $packages | ForEach-Object { '{0}  {1}' -f (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash.ToLower(), [IO.Path]::GetFileName($_) } | Set-Content -LiteralPath $sum -Encoding utf8
 $commit = git -C $repo rev-parse HEAD
 $uploads = @($packages) + @($sum, (Join-Path $repo 'LICENSE'), (Join-Path $repo 'THIRD_PARTY_NOTICES.md'))

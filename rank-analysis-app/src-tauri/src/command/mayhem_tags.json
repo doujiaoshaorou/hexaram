@@ -789,7 +789,7 @@
   {
     "id": "hexaram_streak_win",
     "name": "{N}连胜",
-    "desc": "同模式最近50场正常对局，从最新一场开始连续胜至少3场。",
+    "desc": "同模式从最新一场正常对局往前数，当前连续获胜至少3场；遇到失败立即停止，早先的连胜不计入。最多检查最近50场。",
     "enabled": true,
     "isDefault": true,
     "good": true,
@@ -814,7 +814,7 @@
   {
     "id": "hexaram_streak_loss",
     "name": "{N}连败",
-    "desc": "同模式最近50场正常对局，从最新一场开始连续败至少3场。",
+    "desc": "同模式从最新一场正常对局往前数，当前连续失利至少3场；遇到胜利立即停止，早先的连败不计入。最多检查最近50场。",
     "enabled": true,
     "isDefault": true,
     "good": false,

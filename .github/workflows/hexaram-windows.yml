@@ -22,5 +22,5 @@ jobs:
       - run: ../scripts/build-windows.ps1 -OutputDirectory ../.tools/windows-release
       - uses: actions/upload-artifact@v4
         with:
-          name: Hexaram-Windows-x64
-          path: .tools/windows-release/*.exe
+          name: Hexaram-Windows-x64-Installer
+          path: .tools/windows-release/*-setup.exe

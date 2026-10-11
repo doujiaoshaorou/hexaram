@@ -1,7 +1,5 @@
 //! Hexaram Releases: bounded downloads, independent signatures, explicit restart.
-use super::portable_update::{
-    derive_side_paths, install_form, replace_exe_in_place, verify_portable_signature, InstallForm,
-};
+use super::portable_update::verify_portable_signature;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, time::Duration};
@@ -61,10 +59,8 @@ enum UpdateKind {
     Installer,
 }
 fn update_kind() -> UpdateKind {
-    match install_form() {
-        InstallForm::Installer => UpdateKind::Installer,
-        _ => UpdateKind::Portable,
-    }
+    // All new Windows releases and updates use the signed NSIS installer.
+    UpdateKind::Installer
 }
 #[derive(Serialize, Deserialize)]
 struct Cached {
@@ -358,25 +354,8 @@ pub async fn hex_install_update(app: tauri::AppHandle) -> Result<(), String> {
         std::fs::read(cache_dir().join("ready.exe")).map_err(|_| "更新文件不存在，请重新下载")?;
     verify_portable_signature(&bytes, &cached.signature, &pubkey(&app)?)?;
     let exe = std::env::current_exe().map_err(|_| "无法定位当前程序")?;
-    if cached.kind == UpdateKind::Installer {
-        launch_installer(&cache_dir().join("ready.exe"), &exe)?;
-        // Keep the cache until a successful upgrade makes its version obsolete.
-        // A cancelled/failed installer can be retried without downloading again.
-        app.exit(0);
-        return Ok(());
-    }
-    let paths = derive_side_paths(&exe);
-    replace_exe_in_place(&paths, &bytes)?;
-    let mut command = std::process::Command::new(&paths.target);
-    if let Some(dir) = paths.target.parent() {
-        command.current_dir(dir);
-    }
-    if command.spawn().is_err() {
-        let _ = std::fs::rename(&paths.target, &paths.staged);
-        let _ = std::fs::rename(&paths.backup, &paths.target);
-        return Err("新版启动失败，已尝试恢复旧版，请手动下载".into());
-    }
-    let _ = std::fs::remove_file(cache_dir().join("ready.json"));
+    launch_installer(&cache_dir().join("ready.exe"), &exe)?;
+    // Keep the cache so a cancelled/failed installer can be retried.
     app.exit(0);
     Ok(())
 }
@@ -428,7 +407,7 @@ mod tests {
         let releases = fetch_releases().await.unwrap();
         let r = releases
             .iter()
-            .filter(|r| info(r, UpdateKind::Portable).is_some())
+            .filter(|r| info(r, update_kind()).is_some())
             .max_by_key(|r| version_parts(&r.tag_name))
             .expect("latest stable release");
         if let Ok(expected) = std::env::var("HEXARAM_TEST_RELEASE_VERSION") {
@@ -436,8 +415,8 @@ mod tests {
         }
         let config: serde_json::Value =
             serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
-        for kind in [UpdateKind::Portable, UpdateKind::Installer] {
-            let (exe, sig) = assets(r, kind).expect("latest release must sign both install forms");
+        for kind in [update_kind()] {
+            let (exe, sig) = assets(r, kind).expect("latest release must have a signed installer");
             let signature =
                 String::from_utf8(fetch(&sig.browser_download_url, 16384, None).await.unwrap())
                     .unwrap();
@@ -517,6 +496,8 @@ mod tests {
             asset("Hexaram-0.9.2-win-x64.exe"),
             asset("Hexaram-0.9.2-win-x64.exe.sig"),
         ];
+        assert_eq!(update_kind(), UpdateKind::Installer);
+        assert!(!info(&release, update_kind()).unwrap().downloadable);
         assert!(assets(&release, UpdateKind::Installer).is_none());
         release
             .assets
@@ -525,6 +506,7 @@ mod tests {
         release
             .assets
             .push(asset("Hexaram-0.9.2-win-x64-setup.exe.sig"));
+        assert!(info(&release, update_kind()).unwrap().downloadable);
         assert!(assets(&release, UpdateKind::Portable)
             .unwrap()
             .0
@@ -545,6 +527,7 @@ mod tests {
         let legacy: Cached =
             serde_json::from_str(r#"{"version":"0.9.2","signature":"test"}"#).unwrap();
         assert_eq!(legacy.kind, UpdateKind::Portable);
+        assert_ne!(legacy.kind, update_kind());
         let installer = Cached {
             kind: UpdateKind::Installer,
             ..legacy
@@ -552,5 +535,35 @@ mod tests {
         let loaded: Cached =
             serde_json::from_slice(&serde_json::to_vec(&installer).unwrap()).unwrap();
         assert_eq!(loaded.kind, UpdateKind::Installer);
+        assert_eq!(loaded.kind, update_kind());
+    }
+
+    #[test]
+    fn installer_only_release_is_downloadable() {
+        let release = Release {
+            tag_name: "v0.9.3".into(),
+            name: None,
+            body: None,
+            html_url: format!("{REPO}/releases/tag/v0.9.3"),
+            published_at: None,
+            draft: false,
+            prerelease: false,
+            assets: [
+                "Hexaram-0.9.3-win-x64-setup.exe",
+                "Hexaram-0.9.3-win-x64-setup.exe.sig",
+            ]
+            .iter()
+            .map(|name| Asset {
+                name: (*name).into(),
+                browser_download_url: format!("{REPO}/releases/download/v0.9.3/{name}"),
+            })
+            .collect(),
+        };
+        assert!(info(&release, update_kind()).unwrap().downloadable);
+        assert!(assets(&release, update_kind())
+            .unwrap()
+            .0
+            .name
+            .ends_with("-setup.exe"));
     }
 }

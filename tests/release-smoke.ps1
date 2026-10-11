@@ -1,5 +1,4 @@
 param(
-  [Parameter(Mandatory)][string]$ExePath,
   [Parameter(Mandatory)][string]$InstallerPath,
   [Parameter(Mandatory)][string]$PrivateKeyPath,
   [Parameter(Mandatory)][string]$TauriCliPath
@@ -10,7 +9,7 @@ $qa = Join-Path $repo ('.tools/release-qa-' + [Guid]::NewGuid().ToString('N'))
 $fixture = Join-Path $qa 'source'
 New-Item -ItemType Directory -Path "$fixture/scripts", "$fixture/rank-analysis-app" -Force | Out-Null
 Copy-Item (Join-Path $repo 'scripts/publish-release.ps1') "$fixture/scripts/publish-release.ps1"
-$version = (Get-Item -LiteralPath $ExePath).VersionInfo.ProductVersion
+$version = (Get-Item -LiteralPath $InstallerPath).VersionInfo.ProductVersion
 @{version=$version} | ConvertTo-Json | Set-Content "$fixture/rank-analysis-app/package.json"
 Set-Content "$fixture/LICENSE" 'Synthetic QA license'
 Set-Content "$fixture/THIRD_PARTY_NOTICES.md" 'Synthetic QA notice'
@@ -62,7 +61,7 @@ try {
     $env:HEXARAM_RELEASE_QA_CORRUPT = $corrupt.ToString().ToLower()
     $failed = $false
     try {
-      & "$fixture/scripts/publish-release.ps1" -Version $version -ExePath $ExePath -InstallerPath $InstallerPath -PrivateKeyPath $PrivateKeyPath -TauriCliPath $TauriCliPath -NotesPath "$qa/notes.md" -OutputDirectory "$case/assets" -GhPath $mock -Publish
+      & "$fixture/scripts/publish-release.ps1" -Version $version -InstallerPath $InstallerPath -PrivateKeyPath $PrivateKeyPath -TauriCliPath $TauriCliPath -NotesPath "$qa/notes.md" -OutputDirectory "$case/assets" -GhPath $mock -Publish
     } catch {
       if (!$corrupt -or $_.Exception.Message -notlike 'Uploaded asset verification failed:*') { throw }
       $failed = $true
@@ -71,7 +70,9 @@ try {
     if ($corrupt -and (!$failed -or $published)) { throw 'Corrupted remote bytes were published' }
     if (!$corrupt -and !$published) { throw 'Verified release was not published' }
     $latest = Get-Content "$case/assets/latest.json" -Raw | ConvertFrom-Json
-    if ($latest.version -ne $version -or $latest.platforms.'windows-x86_64'.url -notlike '*-setup.exe' -or $latest.portable.'windows-x86_64'.url -like '*-setup.exe') { throw 'RA-compatible manifest selects incorrect packages' }
+    if ($latest.version -ne $version -or $latest.platforms.'windows-x86_64'.url -notlike '*-setup.exe' -or $latest.PSObject.Properties.Name -contains 'portable') { throw 'Installer-only manifest selects incorrect packages' }
+    $uploads = @(Get-Content "$case/uploads.json" -Raw | ConvertFrom-Json)
+    if ($uploads | Where-Object { [IO.Path]::GetFileName($_) -match '-win-x64\.exe(\.sig)?$' }) { throw 'Portable executable was uploaded' }
     if ($latest.platforms.'windows-x86_64'.signature -ne (Get-Content "$case/assets/Hexaram-$version-win-x64-setup.exe.sig" -Raw).Trim()) { throw 'Installer manifest signature differs' }
     $index = @(Get-Content "$case/assets/hexaram-releases.json" -Raw | ConvertFrom-Json)
     if ($index.Count -ne 1 -or $index[0].draft -or ($index[0].assets.browser_download_url -match 'untagged-qa')) { throw 'Fallback index contains draft URLs' }
