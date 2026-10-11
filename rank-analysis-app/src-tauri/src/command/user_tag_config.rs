@@ -58,6 +58,49 @@ use crate::lcu::api::match_history::MatchHistory;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct MetricCriterion { pub metric: String, pub op: Operator, pub value: f64 }
+
+fn normal_mode_history(history: &MatchHistory, queue: i32) -> MatchHistory {
+    let mut history = history.clone();
+    let mut seen = std::collections::HashSet::new();
+    history.games.games.retain(|g| g.queue_id == queue && !g.participants.is_empty()
+        && !g.participants.iter().chain(g.game_detail.participants.iter()).any(|p| p.stats.game_ended_in_early_surrender)
+        && (g.game_id == 0 || seen.insert((g.platform_id.clone(),g.game_id))));
+    history.games.games.sort_by(|a,b| b.game_creation_date.cmp(&a.game_creation_date));
+    history
+}
+
+fn qualified_counts(games: &[&crate::lcu::api::match_history::Game], criteria: &[MetricCriterion], alternatives: &[Vec<MetricCriterion>]) -> (usize,usize) {
+    if criteria.is_empty() && alternatives.is_empty() { return (0,0); }
+    if alternatives.iter().any(|a| a.is_empty()) {return (0,0)}
+    let (mut hits,mut valid)=(0,0);
+    for g in games {
+        let all: Vec<_> = criteria.iter().chain(alternatives.iter().flatten()).collect();
+        let values: Vec<_> = all.iter().map(|c| extract_game_metric(g,&c.metric)).collect();
+        if !values.iter().all(|v| v.is_finite()) { continue; }
+        valid += 1;
+        let matches = |group: &[MetricCriterion]| group.iter().all(|c| c.op.check(extract_game_metric(g,&c.metric),c.value));
+        if matches(criteria) && (alternatives.is_empty() || alternatives.iter().any(|group|matches(group))) { hits += 1; }
+    }
+    (hits,valid)
+}
+
+fn sample_description(condition: &TagCondition, history: &MatchHistory) -> String {
+    match condition {
+        TagCondition::And { conditions } | TagCondition::Or { conditions } => conditions.iter().map(|c| sample_description(c,history)).filter(|s| !s.is_empty()).collect::<Vec<_>>().join("；"),
+        TagCondition::History { filters, refresh } => {
+            let limit=filters.iter().filter_map(|f|if let MatchFilter::Recent{count}=f {Some((*count).max(0) as usize)}else{None}).min().unwrap_or(history.games.games.len());
+            let games:Vec<_>=history.games.games.iter().take(limit).filter(|g|filters.iter().all(|f|match_filter(g,f))).collect();
+            if let MatchRefresh::QualifiedRatio { criteria,alternatives,.. }=refresh {
+                let(hits,valid)=qualified_counts(&games,criteria,alternatives);
+                format!("近{}场窗口：{} / {} 场命中（{:.1}%），缺失数据{}场",limit,hits,valid,100.0*hits as f64/valid.max(1) as f64,games.len()-valid)
+            } else { format!("近{}场窗口，筛选后{}场",limit,games.len()) }
+        },
+        _=>String::new(),
+    }
+}
+
 /// 获取当前所有标签配置。
 ///
 /// 如果配置不存在，会自动加载默认配置。
@@ -85,10 +128,41 @@ pub async fn get_all_tag_configs() -> Result<Vec<TagConfig>, String> {
 /// - `Err(String)`: 保存失败时的错误信息
 #[tauri::command]
 pub async fn save_tag_configs(configs: Vec<TagConfig>) -> Result<(), String> {
+    for tag in &configs { validate_condition(&tag.condition,0).map_err(|e|format!("{}：{}",tag.name,e))?; }
     let val = tags_to_value(&configs);
     config::put_config("userTags".to_string(), val).await?;
     // 已缓存的标签是按旧规则算的，改完规则要立刻生效
     crate::command::user_tag::invalidate_cache();
+    Ok(())
+}
+
+fn validate_condition(condition: &TagCondition, depth: usize) -> Result<(), String> {
+    if depth > 24 { return Err("条件嵌套不能超过24层".into()); }
+    let fail = || Err("条件不完整：请检查有效场数、比例、指标与候选组".into());
+    let sample = |n:usize| (1..=200).contains(&n);
+    let share = |v:f64| v.is_finite() && (0.0..=1.0).contains(&v);
+    match condition {
+        TagCondition::And{conditions}|TagCondition::Or{conditions}=>{
+            if conditions.is_empty() {return fail()}
+            for child in conditions {validate_condition(child,depth+1)?;}
+        },
+        TagCondition::Not{condition}|TagCondition::PerMode{condition}=>validate_condition(condition,depth+1)?,
+        TagCondition::History{filters,refresh}=>{
+            if filters.iter().any(|f|matches!(f,MatchFilter::Recent{count} if *count < 1 || *count > 200)) {return fail()}
+            match refresh {
+                MatchRefresh::QualifiedRatio{criteria,alternatives,min_games,min_matches,value,..}=>{
+                    if *min_matches>200||!sample(*min_games)||!share(*value)||(criteria.is_empty()&&alternatives.is_empty())||alternatives.iter().any(|g|g.is_empty()) {return fail()}
+                    if criteria.iter().chain(alternatives.iter().flatten()).any(|c| c.metric.is_empty()||!c.value.is_finite()) {return fail()}
+                },
+                MatchRefresh::AggregateKda{min_games,value,..}=>if !sample(*min_games)||!value.is_finite()||*value<0.0 {return fail()},
+                MatchRefresh::ChampionDistribution{min_games,max_share,min_share,min_types,min_champions,win_rate,..}=>{
+                    if !sample(*min_games)||!share(*max_share)||!share(*min_share)||!share(*win_rate)||!(1..=6).contains(min_types)||*min_champions==0||*min_champions>200 {return fail()}
+                },
+                _=>{},
+            }
+        },
+        _=>{},
+    }
     Ok(())
 }
 
@@ -208,6 +282,40 @@ pub enum MatchFilter {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum MatchRefresh {
+    /// AND of per-game numeric criteria, excluding incomplete games from the denominator.
+    QualifiedRatio {
+        criteria: Vec<MetricCriterion>,
+        #[serde(default)]
+        alternatives: Vec<Vec<MetricCriterion>>,
+        #[serde(default, rename = "minMatches")]
+        min_matches: usize,
+        #[serde(rename = "minGames")]
+        min_games: usize,
+        op: Operator,
+        value: f64,
+    },
+    AggregateKda {
+        #[serde(rename = "minGames")]
+        min_games: usize,
+        op: Operator,
+        value: f64,
+    },
+    ChampionDistribution {
+        #[serde(rename = "minGames")]
+        min_games: usize,
+        #[serde(rename = "maxShare")]
+        max_share: f64,
+        #[serde(rename = "minShare")]
+        min_share: f64,
+        #[serde(rename = "minTypes")]
+        min_types: usize,
+        #[serde(rename = "minChampions")]
+        min_champions: usize,
+        #[serde(rename = "winRateOp")]
+        win_rate_op: Operator,
+        #[serde(rename = "winRate")]
+        win_rate: f64,
+    },
     /// 对局数量检查
     Count {
         /// 比较运算符
@@ -312,6 +420,8 @@ pub enum StreakType {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum TagCondition {
+    /// Evaluate the entire subtree independently per Mayhem queue, including custom tags.
+    PerMode { condition: Box<TagCondition> },
     /// 逻辑与：所有条件都满足
     And {
         /// 子条件列表
@@ -413,6 +523,22 @@ impl TagConfig {
             return None;
         }
 
+        if let TagCondition::PerMode { condition } = &self.condition {
+            let mut matched = Vec::new();
+            for (queue,label) in [(2400,"普通海克斯"),(2410,"巅峰赛"),(2450,"经典版")] {
+                if current_mode != 0 && current_mode != queue { continue; }
+                let history = normal_mode_history(match_history,queue);
+                let mut tag = self.clone(); tag.condition = *condition.clone();
+                if let Some(mut result) = tag.evaluate(&history,queue,current_champion) {
+                    result.tag_desc = format!("{}：{}",label,result.tag_desc);
+                    matched.push(result);
+                }
+            }
+            let mut first = matched.first()?.clone();
+            first.tag_desc = matched.iter().map(|t| format!("{} · {}",t.tag_name,t.tag_desc)).collect::<Vec<_>>().join("\n");
+            return Some(first);
+        }
+
         // Filter before Recent: ranked/regular ARAM never consumes the Mayhem sample window.
         let mut hex_history;
         let match_history = if self.id.starts_with("hexaram_") {
@@ -432,16 +558,7 @@ impl TagConfig {
             Some(RankTag {
                 good: self.good,
                 tag_name: display_name,
-                tag_desc: if self.id.starts_with("hexaram_style_") {
-                    let key=match self.id.as_str() {
-                        "hexaram_style_front"=>"hexTankBuild", "hexaram_style_support"=>"hexSupportBuild",
-                        "hexaram_style_rescue"=>"hexRescueSupport", "hexaram_style_ineffective"=>"hexIneffectiveSupport",
-                        "hexaram_style_detached"=>"hexFrontDetached", "hexaram_style_convert"=>"hexGoldConversion", _=>""
-                    };
-                    let rows:Vec<_>=match_history.games.games.iter().take(200).collect();
-                    let hits=rows.iter().filter(|g|extract_game_metric(g,key)==1.0).count();
-                    format!("{} 当前样本：{} / {} 场命中。",self.desc,hits,rows.len())
-                } else { self.desc.clone() },
+                tag_desc: format!("{} {}", self.desc, sample_description(&self.condition, match_history)),
             })
         } else {
             None
@@ -499,6 +616,11 @@ impl EvalContext<'_> {
     /// 条件是否满足
     fn evaluate_node(&self, condition: &TagCondition) -> bool {
         match condition {
+            TagCondition::PerMode { condition } => [2400, 2410, 2450].iter().any(|&queue| {
+                if self.current_mode != 0 && self.current_mode != queue { return false; }
+                let history = normal_mode_history(self.history, queue);
+                EvalContext { history: &history, current_mode: queue, current_champion: self.current_champion }.evaluate_node(condition)
+            }),
             TagCondition::And { conditions } => conditions.iter().all(|c| self.evaluate_node(c)),
             TagCondition::Or { conditions } => conditions.iter().any(|c| self.evaluate_node(c)),
             TagCondition::Not { condition } => !self.evaluate_node(condition),
@@ -562,6 +684,31 @@ impl EvalContext<'_> {
         let games: Vec<_> = games_iter.collect();
 
         match refresh {
+            MatchRefresh::QualifiedRatio { criteria, alternatives, min_games, min_matches, op, value } => {
+                let (hits, valid) = qualified_counts(&games, criteria, alternatives);
+                valid >= (*min_games).max(1) && hits >= *min_matches && op.check(hits as f64 / valid as f64, *value)
+            },
+            MatchRefresh::AggregateKda { min_games, op, value } => {
+                let valid: Vec<_> = games.iter().filter_map(|g| g.participants.first()).filter(|p| p.stats.kills >= 0 && p.stats.assists >= 0 && p.stats.deaths >= 0).collect();
+                let numerator: i64 = valid.iter().map(|p| p.stats.kills as i64 + p.stats.assists as i64).sum();
+                let deaths: i64 = valid.iter().map(|p| p.stats.deaths as i64).sum();
+                valid.len() >= (*min_games).max(1) && op.check(numerator as f64 / deaths.max(1) as f64, *value)
+            },
+            MatchRefresh::ChampionDistribution { min_games, max_share, min_share, min_types, min_champions, win_rate_op, win_rate } => {
+                let mut groups: HashMap<&str, (usize, std::collections::HashSet<i32>)> = HashMap::new();
+                let (mut valid, mut wins) = (0usize, 0usize);
+                for g in &games {
+                    let Some(p) = g.participants.first() else { continue };
+                    let Some(role) = crate::command::champion_roles::primary_role(p.champion_id) else { continue };
+                    let entry = groups.entry(role).or_default();
+                    entry.0 += 1; entry.1.insert(p.champion_id);
+                    valid += 1; wins += usize::from(p.stats.win);
+                }
+                valid >= (*min_games).max(1)
+                    && groups.values().all(|(n,_)| *n as f64 <= *max_share * valid as f64 + 1e-9)
+                    && groups.values().filter(|(n,ids)| *n as f64 + 1e-9 >= *min_share * valid as f64 && ids.len() >= *min_champions).count() >= *min_types
+                    && win_rate_op.check(wins as f64 / valid as f64, *win_rate)
+            },
             MatchRefresh::Count { op, value } => op.check(games.len() as f64, *value),
             MatchRefresh::Average { metric, op, value } => {
                 // 跳过 NAN 场次（detail 缺失的 damageShare/participation），只对有数据的场次求均值，
@@ -721,14 +868,20 @@ fn match_filter(game: &crate::lcu::api::match_history::Game, filter: &MatchFilte
 /// - `participation`: 参团率（(击杀+助攻)/本方全队击杀；game_detail 缺失时为 NAN）
 fn extract_game_metric(game: &crate::lcu::api::match_history::Game, metric: &str) -> f64 {
     if game.participants.is_empty() {
-        return 0.0;
+        return f64::NAN;
     }
     let stats = &game.participants[0].stats;
+
+    if metric.starts_with("role") || ["goldShare","goldFirst","damageGoldRatio","mvp","svp"].contains(&metric)
+        || (matches!(game.queue_id,2400|2410|2450) && ["damageShare","damageTakenShare","participation"].contains(&metric)) {
+        return crate::command::mayhem_style::statistic(game,metric);
+    }
 
     if metric.starts_with("hex") { return crate::command::mayhem_style::metric(game, metric); }
     match metric {
         "kills" => stats.kills as f64,
         "deaths" => stats.deaths as f64,
+        "deathsPerMinute" => if game.game_duration > 0 && stats.deaths >= 0 {stats.deaths as f64 * 60.0 / game.game_duration as f64} else {f64::NAN},
         "assists" => stats.assists as f64,
         "kda" => {
             if stats.deaths == 0 {
@@ -785,7 +938,7 @@ fn extract_game_metric(game: &crate::lcu::api::match_history::Game, metric: &str
                 (stats.kills + stats.assists) as f64 / team_kills as f64
             }
         }
-        _ => 0.0,
+        _ => f64::NAN,
     }
 }
 
@@ -881,9 +1034,16 @@ fn merge_missing_defaults(mut tags: Vec<TagConfig>) -> Vec<TagConfig> {
 }
 
 fn migrate_mayhem_defaults(tags: &mut Vec<TagConfig>) -> bool {
-    let before = tags.len();
-    tags.retain(|t| !(t.is_default && (t.id.starts_with("default_") || ["hexaram_participation","hexaram_damage","hexaram_tank","hexaram_variety"].contains(&t.id.as_str()))));
-    before != tags.len()
+    let before = serde_json::to_string(tags).unwrap();
+    let defaults = get_default_tags();
+    tags.retain(|t| !t.is_default || !(t.id.starts_with("default_") || ["hexaram_variety","hexaram_style_rescue","hexaram_style_ineffective"].contains(&t.id.as_str())));
+    for t in tags.iter_mut().filter(|t| t.is_default) {
+        if let Some(new) = defaults.iter().find(|d| d.id == t.id) {
+            let enabled = if matches!(t.condition, TagCondition::PerMode { .. }) || new.enabled { t.enabled } else { false };
+            *t = new.clone(); t.enabled = enabled;
+        }
+    }
+    before != serde_json::to_string(tags).unwrap()
 }
 
 /// 加载标签配置。
@@ -1035,19 +1195,9 @@ mod tests {
     }
 
     #[test]
-    fn repeated_low_damage_requires_two_mayhem_ashe_or_trundle_games() {
-        let tag = default_tag("hexaram_low_damage_ashe_trundle");
-        let game = |champ, rate, queue| {
-            let mut g = make_game_with_damage_rate(false, rate);
-            g.queue_id = queue; g.participants[0].champion_id = champ; g
-        };
-        assert!(tag.evaluate(&make_history(vec![game(22, 5, 2400), game(48, 11, 2400)]), 0, None).is_some());
-        for second in [game(48,12,2400), game(22,5,420), game(1,5,2400), make_game(48,false,2400)] {
-            assert!(tag.evaluate(&make_history(vec![game(22,5,2400),second]),0,None).is_none());
-        }
-        let mut games = vec![game(1,30,2400); 20];
-        games.extend([game(22,5,2400),game(48,5,2400)]);
-        assert!(tag.evaluate(&make_history(games),0,None).is_none());
+    fn risky_legacy_tags_default_off() {
+        assert!(!default_tag("hexaram_low_damage_ashe_trundle").enabled);
+        assert!(!default_tag("hexaram_style_detached").enabled);
     }
 
     /// 按 id 从默认标签列表中取出一个 TagConfig。
@@ -1377,7 +1527,7 @@ mod tests {
         assert!(t.evaluate(&ranked, 2400, None).is_none());
         let few = make_history((0..9).map(|_| make_game(1, true, 2400)).collect());
         assert!(t.evaluate(&few, 2400, None).is_none());
-        let enough = make_history((0..10).map(|_| make_game(1, true, 2400)).collect());
+        let enough = make_history((0..20).map(|_| make_game(1, true, 2400)).collect());
         assert!(t.evaluate(&enough, 2400, None).is_some());
         assert!(t.evaluate(&enough, 2410, None).is_none());
         assert!(t.evaluate(&enough, 420, None).is_none());
@@ -1406,8 +1556,8 @@ mod tests {
         let tank=|| {let mut g=make_game(57,true,2400);g.participants[0].champion_id=57;g.participants[0].stats.item0=3084;g};
         let h=make_history((0..29).map(|_|tank()).collect());
         assert!(tag.evaluate(&h,0,None).is_none());
-        let mut h=make_history((0..40).map(|_|tank()).collect());
-        assert!(tag.evaluate(&h,0,None).unwrap().tag_desc.contains("40 / 40"));
+        let mut h=make_history((0..50).map(|_|tank()).collect());
+        assert!(tag.evaluate(&h,0,None).unwrap().tag_desc.contains("50 / 50"));
         for g in &mut h.games.games[0..15] {g.participants[0].stats.game_ended_in_early_surrender=true;}
         assert!(tag.evaluate(&h,0,None).is_none());
         let mut old=default_tag("hexaram_style_front");old.id="hexaram_variety".into();
@@ -1415,6 +1565,8 @@ mod tests {
         let mut tags=vec![old,custom];assert!(migrate_mayhem_defaults(&mut tags));
         assert_eq!(tags.len(),1);assert_eq!(tags[0].id,"my_variety");
     }
+
+    include!("tag_rules_tests.rs");
 
 }
 

@@ -1,5 +1,36 @@
 //! Observable Mayhem playstyle signals. Curated final-item IDs, no intent inference.
 use crate::lcu::api::match_history::Game;
+/// Numeric primitives shared by default and user-authored rules.
+pub fn statistic(g: &Game, key: &str) -> f64 {
+    let Some(p) = g.participants.first() else { return f64::NAN };
+    if let Some(role) = key.strip_prefix("role") {
+        return match super::champion_roles::primary_role(p.champion_id) {
+            Some(actual) => if actual == role { 1.0 } else { 0.0 },
+            None => f64::NAN,
+        };
+    }
+    if key == "mvp" || key == "svp" {
+        if g.game_detail.participants.len() != 10 { return f64::NAN; }
+        return if g.mvp.eq_ignore_ascii_case(key) { 1.0 } else { 0.0 };
+    }
+    let team: Vec<_> = g.game_detail.participants.iter().filter(|x| x.team_id == p.team_id).collect();
+    if team.len() != 5 { return f64::NAN; }
+    let sum = |f: fn(&crate::lcu::api::model::Stats)->i32| -> f64 {
+        if team.iter().any(|p| f(&p.stats) < 0) { return f64::NAN; }
+        team.iter().map(|p| f(&p.stats) as f64).sum()
+    };
+    let share = |mine: i32,total: f64| if total > 0.0 && mine >= 0 && mine as f64 <= total {mine as f64 / total} else {f64::NAN};
+    let s = &p.stats;
+    match key {
+        "damageShare" => share(s.total_damage_dealt_to_champions,sum(|s|s.total_damage_dealt_to_champions)),
+        "damageTakenShare" => share(s.total_damage_taken,sum(|s|s.total_damage_taken)),
+        "goldShare" => share(s.gold_earned,sum(|s|s.gold_earned)),
+        "goldFirst" => if s.gold_earned > 0 && sum(|s|s.gold_earned).is_finite() {if team.iter().all(|p| s.gold_earned >= p.stats.gold_earned) {1.0}else{0.0}} else {f64::NAN},
+        "damageGoldRatio" => { let gold=statistic(g,"goldShare"); if gold>0.0 {statistic(g,"damageShare")/gold} else {f64::NAN} },
+        "participation" => { let kills=sum(|s|s.kills); if kills>0.0 && s.kills>=0 && s.assists>=0 {((s.kills as f64+s.assists as f64)/kills).min(1.0)}else{f64::NAN} },
+        _ => f64::NAN,
+    }
+}
 const TANK: &[i32] = &[3083,3084,3065,3068,3075,3143,3110,2502,2504,6665,6667,3109,3190];
 const SUPPORT: &[i32] = &[3107,6617,6620,3504,6616,4005,3109,3190];
 const FRONT: &[i32] = &[12,14,20,27,31,32,36,54,57,72,78,89,98,111,113,154,201,223,516,526];
@@ -12,6 +43,13 @@ pub fn metric(g:&Game, key:&str)->f64 {
     let support_items=items.iter().filter(|x|SUPPORT.contains(x)).count();
     let tank=tank_items>=2 || (FRONT.contains(&p.champion_id)&&tank_items>=1);
     let support=support_items>=2 || (HEALER.contains(&p.champion_id)&&support_items>=1);
+    match key {
+        "hexTankItems" => return tank_items as f64,
+        "hexSupportItems" => return support_items as f64,
+        "hexFrontChampion" => return if FRONT.contains(&p.champion_id) {1.0}else{0.0},
+        "hexSupportChampion" => return if HEALER.contains(&p.champion_id) {1.0}else{0.0},
+        _ => {},
+    }
     if key=="hexTankBuild" {return if tank{1.0}else{0.0}}
     if key=="hexSupportBuild" {return if support{1.0}else{0.0}}
     let team:Vec<_>=g.game_detail.participants.iter().filter(|x|x.team_id==p.team_id).collect();

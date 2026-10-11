@@ -311,6 +311,14 @@ async fn compute_user_tag(
 ) -> Result<UserTag, String> {
     log::info!("get_user_tag_by_puuid: {}, mode: {}", puuid, mode);
     let mut match_history = if matches!(mode,0|2400|2410|2450) { crate::command::hexaram::recent_hex(puuid,200,mode).await? } else { MatchHistory::get_match_history_by_puuid(puuid, 0, 19).await? };
+    if mode == 0 {
+        // Each mode gets its own window from the available archive/server records.
+        match_history.games.games.clear();
+        for queue in [2400,2410,2450] {
+            match_history.games.games.extend(crate::command::hexaram::recent_hex(puuid,200,queue).await?.games.games);
+        }
+        match_history.games.games.sort_by(|a,b| b.game_creation_date.cmp(&a.game_creation_date));
+    }
     match_history.enrich_game_detail().await?;
     match_history.calculate()?; // damageShare 依赖预计算的伤害占比
 

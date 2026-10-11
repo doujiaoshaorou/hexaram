@@ -1,0 +1,871 @@
+{
+  "version": "16.20.1",
+  "source": "Riot Data Dragon tags[0]",
+  "champions": [
+    {
+      "id": 266,
+      "name": "暗裔剑魔",
+      "role": "Fighter"
+    },
+    {
+      "id": 103,
+      "name": "九尾妖狐",
+      "role": "Mage"
+    },
+    {
+      "id": 84,
+      "name": "离群之刺",
+      "role": "Assassin"
+    },
+    {
+      "id": 166,
+      "name": "影哨",
+      "role": "Marksman"
+    },
+    {
+      "id": 12,
+      "name": "牛头酋长",
+      "role": "Tank"
+    },
+    {
+      "id": 799,
+      "name": "铁血狼母",
+      "role": "Fighter"
+    },
+    {
+      "id": 32,
+      "name": "殇之木乃伊",
+      "role": "Tank"
+    },
+    {
+      "id": 34,
+      "name": "冰晶凤凰",
+      "role": "Mage"
+    },
+    {
+      "id": 1,
+      "name": "黑暗之女",
+      "role": "Mage"
+    },
+    {
+      "id": 523,
+      "name": "残月之肃",
+      "role": "Marksman"
+    },
+    {
+      "id": 22,
+      "name": "寒冰射手",
+      "role": "Marksman"
+    },
+    {
+      "id": 136,
+      "name": "铸星龙王",
+      "role": "Mage"
+    },
+    {
+      "id": 893,
+      "name": "双界灵兔",
+      "role": "Mage"
+    },
+    {
+      "id": 268,
+      "name": "沙漠皇帝",
+      "role": "Mage"
+    },
+    {
+      "id": 432,
+      "name": "星界游神",
+      "role": "Support"
+    },
+    {
+      "id": 200,
+      "name": "虚空女皇",
+      "role": "Fighter"
+    },
+    {
+      "id": 53,
+      "name": "蒸汽机器人",
+      "role": "Tank"
+    },
+    {
+      "id": 63,
+      "name": "复仇焰魂",
+      "role": "Mage"
+    },
+    {
+      "id": 201,
+      "name": "弗雷尔卓德之心",
+      "role": "Tank"
+    },
+    {
+      "id": 233,
+      "name": "狂厄蔷薇",
+      "role": "Fighter"
+    },
+    {
+      "id": 51,
+      "name": "皮城女警",
+      "role": "Marksman"
+    },
+    {
+      "id": 164,
+      "name": "青钢影",
+      "role": "Fighter"
+    },
+    {
+      "id": 69,
+      "name": "魔蛇之拥",
+      "role": "Mage"
+    },
+    {
+      "id": 31,
+      "name": "虚空恐惧",
+      "role": "Tank"
+    },
+    {
+      "id": 42,
+      "name": "英勇投弹手",
+      "role": "Marksman"
+    },
+    {
+      "id": 122,
+      "name": "诺克萨斯之手",
+      "role": "Fighter"
+    },
+    {
+      "id": 131,
+      "name": "皎月女神",
+      "role": "Fighter"
+    },
+    {
+      "id": 119,
+      "name": "荣耀行刑官",
+      "role": "Marksman"
+    },
+    {
+      "id": 36,
+      "name": "祖安狂人",
+      "role": "Tank"
+    },
+    {
+      "id": 245,
+      "name": "时间刺客",
+      "role": "Assassin"
+    },
+    {
+      "id": 60,
+      "name": "蜘蛛女皇",
+      "role": "Assassin"
+    },
+    {
+      "id": 28,
+      "name": "痛苦之拥",
+      "role": "Assassin"
+    },
+    {
+      "id": 81,
+      "name": "探险家",
+      "role": "Marksman"
+    },
+    {
+      "id": 9,
+      "name": "远古恐惧",
+      "role": "Mage"
+    },
+    {
+      "id": 114,
+      "name": "无双剑姬",
+      "role": "Fighter"
+    },
+    {
+      "id": 105,
+      "name": "潮汐海灵",
+      "role": "Assassin"
+    },
+    {
+      "id": 3,
+      "name": "正义巨像",
+      "role": "Tank"
+    },
+    {
+      "id": 41,
+      "name": "海洋之灾",
+      "role": "Fighter"
+    },
+    {
+      "id": 86,
+      "name": "德玛西亚之力",
+      "role": "Fighter"
+    },
+    {
+      "id": 150,
+      "name": "迷失之牙",
+      "role": "Fighter"
+    },
+    {
+      "id": 79,
+      "name": "酒桶",
+      "role": "Fighter"
+    },
+    {
+      "id": 104,
+      "name": "法外狂徒",
+      "role": "Marksman"
+    },
+    {
+      "id": 887,
+      "name": "灵罗娃娃",
+      "role": "Fighter"
+    },
+    {
+      "id": 120,
+      "name": "战争之影",
+      "role": "Fighter"
+    },
+    {
+      "id": 74,
+      "name": "大发明家",
+      "role": "Mage"
+    },
+    {
+      "id": 910,
+      "name": "异画师",
+      "role": "Mage"
+    },
+    {
+      "id": 420,
+      "name": "海兽祭司",
+      "role": "Fighter"
+    },
+    {
+      "id": 39,
+      "name": "刀锋舞者",
+      "role": "Fighter"
+    },
+    {
+      "id": 427,
+      "name": "翠神",
+      "role": "Support"
+    },
+    {
+      "id": 40,
+      "name": "风暴之怒",
+      "role": "Support"
+    },
+    {
+      "id": 59,
+      "name": "德玛西亚皇子",
+      "role": "Fighter"
+    },
+    {
+      "id": 24,
+      "name": "武器大师",
+      "role": "Fighter"
+    },
+    {
+      "id": 126,
+      "name": "未来守护者",
+      "role": "Fighter"
+    },
+    {
+      "id": 202,
+      "name": "戏命师",
+      "role": "Marksman"
+    },
+    {
+      "id": 222,
+      "name": "暴走萝莉",
+      "role": "Marksman"
+    },
+    {
+      "id": 145,
+      "name": "虚空之女",
+      "role": "Marksman"
+    },
+    {
+      "id": 429,
+      "name": "复仇之矛",
+      "role": "Marksman"
+    },
+    {
+      "id": 43,
+      "name": "天启者",
+      "role": "Mage"
+    },
+    {
+      "id": 30,
+      "name": "死亡颂唱者",
+      "role": "Mage"
+    },
+    {
+      "id": 38,
+      "name": "虚空行者",
+      "role": "Assassin"
+    },
+    {
+      "id": 55,
+      "name": "不祥之刃",
+      "role": "Assassin"
+    },
+    {
+      "id": 10,
+      "name": "正义天使",
+      "role": "Marksman"
+    },
+    {
+      "id": 141,
+      "name": "影流之镰",
+      "role": "Fighter"
+    },
+    {
+      "id": 85,
+      "name": "狂暴之心",
+      "role": "Mage"
+    },
+    {
+      "id": 121,
+      "name": "虚空掠夺者",
+      "role": "Assassin"
+    },
+    {
+      "id": 203,
+      "name": "永猎双子",
+      "role": "Marksman"
+    },
+    {
+      "id": 240,
+      "name": "暴怒骑士",
+      "role": "Fighter"
+    },
+    {
+      "id": 96,
+      "name": "深渊巨口",
+      "role": "Marksman"
+    },
+    {
+      "id": 897,
+      "name": "纳祖芒荣耀",
+      "role": "Tank"
+    },
+    {
+      "id": 7,
+      "name": "诡术妖姬",
+      "role": "Assassin"
+    },
+    {
+      "id": 64,
+      "name": "盲僧",
+      "role": "Fighter"
+    },
+    {
+      "id": 89,
+      "name": "曙光女神",
+      "role": "Tank"
+    },
+    {
+      "id": 876,
+      "name": "含羞蓓蕾",
+      "role": "Fighter"
+    },
+    {
+      "id": 127,
+      "name": "冰霜女巫",
+      "role": "Mage"
+    },
+    {
+      "id": 805,
+      "name": "灰烬驱魔人",
+      "role": "Assassin"
+    },
+    {
+      "id": 236,
+      "name": "圣枪游侠",
+      "role": "Marksman"
+    },
+    {
+      "id": 117,
+      "name": "仙灵女巫",
+      "role": "Support"
+    },
+    {
+      "id": 99,
+      "name": "光辉女郎",
+      "role": "Mage"
+    },
+    {
+      "id": 54,
+      "name": "熔岩巨兽",
+      "role": "Tank"
+    },
+    {
+      "id": 90,
+      "name": "虚空先知",
+      "role": "Mage"
+    },
+    {
+      "id": 57,
+      "name": "扭曲树精",
+      "role": "Tank"
+    },
+    {
+      "id": 11,
+      "name": "无极剑圣",
+      "role": "Fighter"
+    },
+    {
+      "id": 800,
+      "name": "流光镜影",
+      "role": "Mage"
+    },
+    {
+      "id": 902,
+      "name": "明烛",
+      "role": "Support"
+    },
+    {
+      "id": 21,
+      "name": "赏金猎人",
+      "role": "Marksman"
+    },
+    {
+      "id": 62,
+      "name": "齐天大圣",
+      "role": "Fighter"
+    },
+    {
+      "id": 82,
+      "name": "铁铠冥魂",
+      "role": "Fighter"
+    },
+    {
+      "id": 25,
+      "name": "堕落天使",
+      "role": "Support"
+    },
+    {
+      "id": 950,
+      "name": "百裂冥犬",
+      "role": "Assassin"
+    },
+    {
+      "id": 267,
+      "name": "唤潮鲛姬",
+      "role": "Support"
+    },
+    {
+      "id": 75,
+      "name": "沙漠死神",
+      "role": "Fighter"
+    },
+    {
+      "id": 111,
+      "name": "深海泰坦",
+      "role": "Tank"
+    },
+    {
+      "id": 518,
+      "name": "万花通灵",
+      "role": "Mage"
+    },
+    {
+      "id": 76,
+      "name": "狂野女猎手",
+      "role": "Assassin"
+    },
+    {
+      "id": 895,
+      "name": "不羁之悦",
+      "role": "Fighter"
+    },
+    {
+      "id": 56,
+      "name": "永恒梦魇",
+      "role": "Fighter"
+    },
+    {
+      "id": 20,
+      "name": "雪原双子",
+      "role": "Tank"
+    },
+    {
+      "id": 2,
+      "name": "狂战士",
+      "role": "Fighter"
+    },
+    {
+      "id": 61,
+      "name": "发条魔灵",
+      "role": "Mage"
+    },
+    {
+      "id": 516,
+      "name": "山隐之焰",
+      "role": "Tank"
+    },
+    {
+      "id": 80,
+      "name": "不屈之枪",
+      "role": "Fighter"
+    },
+    {
+      "id": 78,
+      "name": "圣锤之毅",
+      "role": "Tank"
+    },
+    {
+      "id": 555,
+      "name": "血港鬼影",
+      "role": "Support"
+    },
+    {
+      "id": 246,
+      "name": "元素女皇",
+      "role": "Assassin"
+    },
+    {
+      "id": 133,
+      "name": "德玛西亚之翼",
+      "role": "Marksman"
+    },
+    {
+      "id": 497,
+      "name": "幻翎",
+      "role": "Support"
+    },
+    {
+      "id": 33,
+      "name": "披甲龙龟",
+      "role": "Tank"
+    },
+    {
+      "id": 421,
+      "name": "虚空遁地兽",
+      "role": "Fighter"
+    },
+    {
+      "id": 526,
+      "name": "镕铁少女",
+      "role": "Tank"
+    },
+    {
+      "id": 888,
+      "name": "炼金男爵",
+      "role": "Support"
+    },
+    {
+      "id": 58,
+      "name": "荒漠屠夫",
+      "role": "Fighter"
+    },
+    {
+      "id": 107,
+      "name": "傲之追猎者",
+      "role": "Assassin"
+    },
+    {
+      "id": 92,
+      "name": "放逐之刃",
+      "role": "Fighter"
+    },
+    {
+      "id": 68,
+      "name": "机械公敌",
+      "role": "Fighter"
+    },
+    {
+      "id": 13,
+      "name": "符文法师",
+      "role": "Mage"
+    },
+    {
+      "id": 360,
+      "name": "沙漠玫瑰",
+      "role": "Marksman"
+    },
+    {
+      "id": 113,
+      "name": "北地之怒",
+      "role": "Tank"
+    },
+    {
+      "id": 235,
+      "name": "涤魂圣枪",
+      "role": "Support"
+    },
+    {
+      "id": 147,
+      "name": "星籁歌姬",
+      "role": "Support"
+    },
+    {
+      "id": 875,
+      "name": "腕豪",
+      "role": "Fighter"
+    },
+    {
+      "id": 35,
+      "name": "恶魔小丑",
+      "role": "Assassin"
+    },
+    {
+      "id": 98,
+      "name": "暮光之眼",
+      "role": "Tank"
+    },
+    {
+      "id": 102,
+      "name": "龙血武姬",
+      "role": "Fighter"
+    },
+    {
+      "id": 27,
+      "name": "炼金术士",
+      "role": "Tank"
+    },
+    {
+      "id": 14,
+      "name": "亡灵战神",
+      "role": "Tank"
+    },
+    {
+      "id": 15,
+      "name": "战争女神",
+      "role": "Marksman"
+    },
+    {
+      "id": 72,
+      "name": "上古领主",
+      "role": "Tank"
+    },
+    {
+      "id": 901,
+      "name": "炽炎雏龙",
+      "role": "Marksman"
+    },
+    {
+      "id": 37,
+      "name": "琴瑟仙女",
+      "role": "Support"
+    },
+    {
+      "id": 16,
+      "name": "众星之子",
+      "role": "Support"
+    },
+    {
+      "id": 50,
+      "name": "诺克萨斯统领",
+      "role": "Mage"
+    },
+    {
+      "id": 517,
+      "name": "解脱者",
+      "role": "Mage"
+    },
+    {
+      "id": 134,
+      "name": "暗黑元首",
+      "role": "Mage"
+    },
+    {
+      "id": 223,
+      "name": "河流之王",
+      "role": "Tank"
+    },
+    {
+      "id": 163,
+      "name": "岩雀",
+      "role": "Mage"
+    },
+    {
+      "id": 91,
+      "name": "刀锋之影",
+      "role": "Assassin"
+    },
+    {
+      "id": 44,
+      "name": "瓦洛兰之盾",
+      "role": "Support"
+    },
+    {
+      "id": 17,
+      "name": "迅捷斥候",
+      "role": "Marksman"
+    },
+    {
+      "id": 412,
+      "name": "魂锁典狱长",
+      "role": "Support"
+    },
+    {
+      "id": 18,
+      "name": "麦林炮手",
+      "role": "Marksman"
+    },
+    {
+      "id": 48,
+      "name": "巨魔之王",
+      "role": "Fighter"
+    },
+    {
+      "id": 23,
+      "name": "蛮族之王",
+      "role": "Fighter"
+    },
+    {
+      "id": 4,
+      "name": "卡牌大师",
+      "role": "Mage"
+    },
+    {
+      "id": 29,
+      "name": "瘟疫之源",
+      "role": "Marksman"
+    },
+    {
+      "id": 77,
+      "name": "兽灵行者",
+      "role": "Fighter"
+    },
+    {
+      "id": 6,
+      "name": "无畏战车",
+      "role": "Fighter"
+    },
+    {
+      "id": 110,
+      "name": "惩戒之箭",
+      "role": "Marksman"
+    },
+    {
+      "id": 67,
+      "name": "暗夜猎手",
+      "role": "Marksman"
+    },
+    {
+      "id": 45,
+      "name": "邪恶小法师",
+      "role": "Mage"
+    },
+    {
+      "id": 161,
+      "name": "虚空之眼",
+      "role": "Mage"
+    },
+    {
+      "id": 711,
+      "name": "愁云使者",
+      "role": "Mage"
+    },
+    {
+      "id": 254,
+      "name": "皮城执法官",
+      "role": "Fighter"
+    },
+    {
+      "id": 234,
+      "name": "破败之王",
+      "role": "Fighter"
+    },
+    {
+      "id": 112,
+      "name": "奥术先驱",
+      "role": "Mage"
+    },
+    {
+      "id": 8,
+      "name": "猩红收割者",
+      "role": "Mage"
+    },
+    {
+      "id": 106,
+      "name": "不灭狂雷",
+      "role": "Fighter"
+    },
+    {
+      "id": 19,
+      "name": "祖安怒兽",
+      "role": "Fighter"
+    },
+    {
+      "id": 498,
+      "name": "逆羽",
+      "role": "Marksman"
+    },
+    {
+      "id": 101,
+      "name": "远古巫灵",
+      "role": "Mage"
+    },
+    {
+      "id": 5,
+      "name": "德邦总管",
+      "role": "Fighter"
+    },
+    {
+      "id": 157,
+      "name": "疾风剑豪",
+      "role": "Fighter"
+    },
+    {
+      "id": 777,
+      "name": "封魔剑魂",
+      "role": "Fighter"
+    },
+    {
+      "id": 83,
+      "name": "牧魂人",
+      "role": "Fighter"
+    },
+    {
+      "id": 804,
+      "name": "不破之誓",
+      "role": "Marksman"
+    },
+    {
+      "id": 350,
+      "name": "魔法猫咪",
+      "role": "Support"
+    },
+    {
+      "id": 904,
+      "name": "不落魔锋",
+      "role": "Fighter"
+    },
+    {
+      "id": 154,
+      "name": "生化魔人",
+      "role": "Tank"
+    },
+    {
+      "id": 238,
+      "name": "影流之主",
+      "role": "Assassin"
+    },
+    {
+      "id": 221,
+      "name": "祖安花火",
+      "role": "Marksman"
+    },
+    {
+      "id": 115,
+      "name": "爆破鬼才",
+      "role": "Mage"
+    },
+    {
+      "id": 26,
+      "name": "时光守护者",
+      "role": "Support"
+    },
+    {
+      "id": 142,
+      "name": "暮光星灵",
+      "role": "Mage"
+    },
+    {
+      "id": 143,
+      "name": "荆棘之兴",
+      "role": "Mage"
+    }
+  ]
+}

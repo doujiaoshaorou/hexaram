@@ -1,5 +1,6 @@
 <template>
   <div class="condition-node">
+    <n-select aria-label="条件类型" :value="condition.type" :options="nodeTypeOptions" @update:value="changeNodeType" style="width: 230px; margin-bottom: 8px" />
     <!-- Logic Nodes (AND/OR) -->
     <div v-if="condition.type === 'and' || condition.type === 'or'" class="group-node">
       <div class="node-header">
@@ -31,9 +32,9 @@
     </div>
 
     <!-- NOT Node -->
-    <div v-else-if="condition.type === 'not'" class="group-node not-node">
+    <div v-else-if="condition.type === 'not' || condition.type === 'perMode'" class="group-node" :class="{'not-node': condition.type === 'not'}">
       <div class="node-header">
-        <n-tag type="error" size="small">排除 (NOT)</n-tag>
+        <n-tag size="small">{{ condition.type === 'perMode' ? '海克斯分模式判定（排除重开）' : '排除 (NOT)' }}</n-tag>
         <n-button size="tiny" circle type="error" @click="removeSelf" v-if="!isRoot">-</n-button>
       </div>
       <div class="children-container">
@@ -135,7 +136,7 @@
                 size="small"
                 v-model:value="filter.count"
                 :min="1"
-                :max="50"
+                :max="200"
                 :show-button="false"
                 class="num-input"
               />
@@ -174,13 +175,13 @@
           <!-- Count/Sum/Avg/Max/Min/DistinctChampions（共用 op + value 控件） -->
           <template
             v-if="
-              ['count', 'sum', 'average', 'max', 'min', 'distinctChampions'].includes(
+              ['count', 'sum', 'average', 'max', 'min', 'distinctChampions', 'aggregateKda'].includes(
                 condition.refresh.type
               )
             "
           >
             <n-select
-              v-if="!['count', 'distinctChampions'].includes(condition.refresh.type)"
+              v-if="!['count', 'distinctChampions', 'aggregateKda'].includes(condition.refresh.type)"
               size="small"
               v-model:value="condition.refresh.metric"
               :options="metricOptions"
@@ -199,6 +200,43 @@
               :show-button="false"
               class="num-input"
             />
+          </template>
+          <template v-if="['qualifiedRatio','aggregateKda','championDistribution'].includes(condition.refresh.type)">
+            <span>至少有效场数</span><n-input-number aria-label="最低有效场数" v-model:value="condition.refresh.minGames" :min="1" :max="200" style="width:100px" />
+          </template>
+          <template v-if="condition.refresh.type === 'qualifiedRatio'">
+            <div style="width:100%">单局同时满足以下条件；缺失任何所需指标的对局不进入分母。占比输入 0～1。</div>
+            <div v-for="(rule,index) in condition.refresh.criteria" :key="index" class="filter-row" style="width:100%">
+              <n-select aria-label="单局指标" v-model:value="rule.metric" :options="metricOptions" style="width:240px" />
+              <n-select aria-label="单局比较" v-model:value="rule.op" :options="opOptions" style="width:85px" />
+              <n-input-number aria-label="单局阈值" v-model:value="rule.value" style="width:110px" />
+              <n-button @click="condition.refresh.criteria.splice(index,1)">移除</n-button>
+            </div>
+            <n-button @click="condition.refresh.criteria.push({metric:'damageShare',op:'>=',value:0.28})">添加单局条件</n-button>
+            <div style="width:100%" v-for="(group,groupIndex) in condition.refresh.alternatives || []" :key="groupIndex">
+              <span>并且满足任一候选组 · 组内全部满足</span><n-button @click="condition.refresh.alternatives.splice(groupIndex,1)">移除组</n-button>
+              <div v-for="(rule,index) in group" :key="index" class="filter-row">
+                <n-select aria-label="候选组指标" v-model:value="rule.metric" :options="metricOptions" style="width:240px" />
+                <n-select aria-label="候选组比较" v-model:value="rule.op" :options="opOptions" style="width:85px" />
+                <n-input-number aria-label="候选组阈值" v-model:value="rule.value" style="width:110px" />
+                <n-button @click="group.splice(index,1)">移除</n-button>
+              </div>
+              <n-button @click="group.push({metric:'hexTankItems',op:'>=',value:1})">添加组内条件</n-button>
+            </div>
+            <n-button @click="(condition.refresh.alternatives ||= []).push([{metric:'hexTankItems',op:'>=',value:2}])">添加任一候选组</n-button>
+            <span>至少达标场数</span><n-input-number aria-label="最低达标场数" :value="condition.refresh.minMatches ?? 0" @update:value="condition.refresh.minMatches = $event ?? 0" :min="0" :max="200" style="width:100px" />
+            <span>达标场次 / 有效场次</span>
+            <n-select aria-label="场次占比比较" v-model:value="condition.refresh.op" :options="opOptions" style="width:85px" />
+            <n-input-number aria-label="达标比例" v-model:value="condition.refresh.value" :min="0" :max="1" :step="0.05" style="width:110px" />
+          </template>
+          <template v-if="condition.refresh.type === 'championDistribution'">
+            <span>任一类型占比 ≤</span><n-input-number aria-label="最高类型占比" v-model:value="condition.refresh.maxShare" :min="0" :max="1" :step="0.05" style="width:100px" />
+            <span>至少类型数</span><n-input-number aria-label="最低类型数量" v-model:value="condition.refresh.minTypes" :min="1" :max="6" style="width:100px" />
+            <span>各类型占比 ≥</span><n-input-number aria-label="最低类型占比" v-model:value="condition.refresh.minShare" :min="0" :max="1" :step="0.05" style="width:100px" />
+            <span>各类型不同英雄 ≥</span><n-input-number aria-label="每类不同英雄数量" v-model:value="condition.refresh.minChampions" :min="1" style="width:100px" />
+            <span>总体胜率</span><n-select aria-label="胜率比较" v-model:value="condition.refresh.winRateOp" :options="opOptions" style="width:85px" />
+            <n-input-number aria-label="总体胜率阈值" v-model:value="condition.refresh.winRate" :min="0" :max="1" :step="0.01" style="width:100px" />
+            <div>使用固定主类型，每位英雄只计一类。未知分类不计入有效样本。</div>
           </template>
 
           <!-- Streak -->
@@ -351,9 +389,28 @@ const filterTypeOptions = [
   { label: '最近 N 场', value: 'recent' }
 ]
 
+const nodeTypeOptions = [
+ {label:'按海克斯模式分别判定',value:'perMode'}, {label:'满足所有（AND）',value:'and'},
+ {label:'满足任一（OR）',value:'or'}, {label:'排除（NOT）',value:'not'},
+ {label:'历史数据检查',value:'history'}, {label:'当前模式',value:'currentQueue'}, {label:'当前英雄',value:'currentChampion'}
+]
+function freshHistory() { return {type:'history',filters:[{type:'recent',count:50}],refresh:{type:'qualifiedRatio',minGames:20,criteria:[{metric:'damageShare',op:'>=',value:0.28}],op:'>=',value:0.3}} }
+function changeNodeType(type:string) {
+ const next = ['and','or'].includes(type) ? {type,conditions:[freshHistory()]} :
+ ['not','perMode'].includes(type) ? {type,condition:freshHistory()} :
+ type==='history' ? freshHistory() : {type,ids:[]};
+ emit('update:modelValue',next)
+}
 const metricOptions = [
+  {label:'防御成装数量',value:'hexTankItems'}, {label:'辅助成装数量',value:'hexSupportItems'},
+  {label:'前排英雄（0/1）',value:'hexFrontChampion'}, {label:'辅助型英雄（0/1）',value:'hexSupportChampion'},
+  ...[['Fighter','战士'],['Marksman','射手'],['Mage','法师'],['Tank','坦克'],['Assassin','刺客'],['Support','辅助']].map(([role,name])=>({label:name+'主类型（0/1）',value:'role'+role})),
+  {label:'经济占比（0–1）',value:'goldShare'}, {label:'经济队内第一（含并列，0/1）',value:'goldFirst'},
+  {label:'输出占比 / 经济占比',value:'damageGoldRatio'},
+  {label:'MVP（0/1）',value:'mvp'}, {label:'SVP（0/1）',value:'svp'},
   { label: '击杀 (Kills)', value: 'kills' },
   { label: '死亡 (Deaths)', value: 'deaths' },
+  { label: '每分钟死亡', value: 'deathsPerMinute' },
   { label: '助攻 (Assists)', value: 'assists' },
   { label: 'KDA', value: 'kda' },
   { label: '胜负 (Win)', value: 'win' },
@@ -362,9 +419,7 @@ const metricOptions = [
   { label: '造成伤害', value: 'damage' },
   { label: '承受伤害', value: 'damageTaken' },
   { label: '前排常客单局条件（0/1）', value: 'hexTankBuild' },
-  { label: '奶盾偏好单局条件（0/1）', value: 'hexSupportBuild' },
-  { label: '救场奶盾单局条件（0/1）', value: 'hexRescueSupport' },
-  { label: '辅助低效局偏多单局条件（0/1）', value: 'hexIneffectiveSupport' },
+  { label: '辅助出装偏好单局条件（0/1）', value: 'hexSupportBuild' },
   { label: '前排脱节局偏多单局条件（0/1）', value: 'hexFrontDetached' },
   { label: '经济转输出单局条件（0/1）', value: 'hexGoldConversion' },
   { label: '团队承伤占比（0–1）', value: 'damageTakenShare' },
@@ -383,6 +438,9 @@ const opOptions = [
 ]
 
 const refreshTypeOptions = [
+  { label: '有效场次占比（组合条件）', value: 'qualifiedRatio' },
+  { label: '综合 KDA（总量计算）', value: 'aggregateKda' },
+  { label: '英雄类型分布与胜率', value: 'championDistribution' },
   { label: '场次计数', value: 'count' },
   { label: '平均值', value: 'average' },
   { label: '求和', value: 'sum' },
@@ -493,6 +551,7 @@ function handleFilterTypeChange(filter: any, newType: string) {
  * 避免残留字段导致后端反序列化失败（如 streak 的 min/kind 混进 ratio）
  */
 function handleRefreshTypeChange(refresh: any, newType: string) {
+  for (const key of Object.keys(refresh)) delete refresh[key]
   delete refresh.metric
   delete refresh.op
   delete refresh.value
@@ -501,7 +560,13 @@ function handleRefreshTypeChange(refresh: any, newType: string) {
   delete refresh.gameOp
   delete refresh.gameValue
   refresh.type = newType
-  if (newType === 'count') {
+  if (newType === 'qualifiedRatio') {
+    Object.assign(refresh,{minGames:20,criteria:[{metric:'damageShare',op:'>=',value:0.28}],op:'>=',value:0.3})
+  } else if (newType === 'aggregateKda') {
+    Object.assign(refresh,{minGames:20,op:'>=',value:4.5})
+  } else if (newType === 'championDistribution') {
+    Object.assign(refresh,{minGames:100,maxShare:0.35,minShare:0.1,minTypes:4,minChampions:3,winRateOp:'>',winRate:0.52})
+  } else if (newType === 'count') {
     refresh.op = '>='
     refresh.value = 1
   } else if (['average', 'sum', 'max', 'min'].includes(newType)) {
@@ -610,7 +675,7 @@ function emitUpdate() {
 }
 
 .sel-type {
-  width: 100px;
+  width: 210px;
 }
 .sel-metric {
   width: 120px;

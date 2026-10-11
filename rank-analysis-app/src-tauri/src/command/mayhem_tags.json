@@ -1,549 +1,1027 @@
 [
   {
-    "id": "hexaram_low_damage_ashe_trundle",
-    "name": "魔怔人",
-    "desc": "近 20 场海克斯中，寒冰或巨魔团队输出占比低于 12% 的对局至少 2 场。只描述重复低输出，不判断是否有适配强化或是否故意；缺少伤害数据不计入。",
+    "id": "hexaram_damage",
+    "name": "输出核心",
+    "desc": "同模式最近50场正常对局，有效样本至少20场；至少30%的有效场次对英雄输出占比≥28%。满足火力全开时优先展示后者。",
     "enabled": true,
     "isDefault": true,
-    "good": false,
+    "good": true,
     "condition": {
-      "type": "history",
-      "filters": [
-        {
-          "type": "recent",
-          "count": 20
-        },
-        {
-          "type": "champion",
-          "ids": [
-            22,
-            48
-          ]
-        },
-        {
-          "type": "stat",
-          "metric": "damageShare",
-          "op": "<",
-          "value": 0.12
+      "type": "perMode",
+      "condition": {
+        "type": "and",
+        "conditions": [
+          {
+            "type": "history",
+            "filters": [
+              {
+                "type": "recent",
+                "count": 50
+              }
+            ],
+            "refresh": {
+              "type": "qualifiedRatio",
+              "minGames": 20,
+              "criteria": [
+                {
+                  "metric": "damageShare",
+                  "op": ">=",
+                  "value": 0.28
+                }
+              ],
+              "op": ">=",
+              "value": 0.3
+            }
+          },
+          {
+            "type": "not",
+            "condition": {
+              "type": "history",
+              "filters": [
+                {
+                  "type": "recent",
+                  "count": 50
+                }
+              ],
+              "refresh": {
+                "type": "qualifiedRatio",
+                "minGames": 20,
+                "criteria": [
+                  {
+                    "metric": "damageShare",
+                    "op": ">=",
+                    "value": 0.35
+                  }
+                ],
+                "op": ">=",
+                "value": 0.15
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "hexaram_fire",
+    "name": "火力全开",
+    "desc": "同模式最近50场正常对局，有效样本至少20场；至少15%的有效场次对英雄输出占比≥35%。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 20,
+          "criteria": [
+            {
+              "metric": "damageShare",
+              "op": ">=",
+              "value": 0.35
+            }
+          ],
+          "op": ">=",
+          "value": 0.15
         }
-      ],
-      "refresh": {
-        "type": "count",
-        "op": ">=",
-        "value": 2
+      }
+    }
+  },
+  {
+    "id": "hexaram_tank",
+    "name": "承伤担当",
+    "desc": "同模式最近50场正常对局，有效样本至少20场；至少30%的有效场次承伤占比≥30%。满足钢铁前排时优先展示后者。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "and",
+        "conditions": [
+          {
+            "type": "history",
+            "filters": [
+              {
+                "type": "recent",
+                "count": 50
+              }
+            ],
+            "refresh": {
+              "type": "qualifiedRatio",
+              "minGames": 20,
+              "criteria": [
+                {
+                  "metric": "damageTakenShare",
+                  "op": ">=",
+                  "value": 0.3
+                }
+              ],
+              "op": ">=",
+              "value": 0.3
+            }
+          },
+          {
+            "type": "not",
+            "condition": {
+              "type": "history",
+              "filters": [
+                {
+                  "type": "recent",
+                  "count": 50
+                }
+              ],
+              "refresh": {
+                "type": "qualifiedRatio",
+                "minGames": 20,
+                "criteria": [
+                  {
+                    "metric": "damageTakenShare",
+                    "op": ">=",
+                    "value": 0.38
+                  },
+                  {
+                    "metric": "participation",
+                    "op": ">=",
+                    "value": 0.6
+                  }
+                ],
+                "op": ">=",
+                "value": 0.15
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "hexaram_steel",
+    "name": "钢铁前排",
+    "desc": "同模式最近50场正常对局，有效样本至少20场；至少15%的有效场次承伤占比≥38%且参团率≥60%。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 20,
+          "criteria": [
+            {
+              "metric": "damageTakenShare",
+              "op": ">=",
+              "value": 0.38
+            },
+            {
+              "metric": "participation",
+              "op": ">=",
+              "value": 0.6
+            }
+          ],
+          "op": ">=",
+          "value": 0.15
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_gold",
+    "name": "经济大王",
+    "desc": "同模式最近50场正常对局，有效样本至少20场；至少30%的有效场次经济队内第一（含并列）且经济占比≥23%。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 20,
+          "criteria": [
+            {
+              "metric": "goldFirst",
+              "op": ">=",
+              "value": 1
+            },
+            {
+              "metric": "goldShare",
+              "op": ">=",
+              "value": 0.23
+            }
+          ],
+          "op": ">=",
+          "value": 0.3
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_style_convert",
+    "name": "经济转输出",
+    "desc": "同模式最近50场正常对局，有效样本至少20场；至少25%的有效场次输出占比≥25%，输出占比÷经济占比≥1.3。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 20,
+          "criteria": [
+            {
+              "metric": "damageShare",
+              "op": ">=",
+              "value": 0.25
+            },
+            {
+              "metric": "damageGoldRatio",
+              "op": ">=",
+              "value": 1.3
+            }
+          ],
+          "op": ">=",
+          "value": 0.25
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_kda",
+    "name": "KDA 大王",
+    "desc": "同模式最近50场正常对局，有效样本至少20场；综合KDA≥4.5且至少40%的有效场次单局KDA≥5。综合KDA=(总击杀+总助攻)/max(总死亡,1)。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "and",
+        "conditions": [
+          {
+            "type": "history",
+            "filters": [
+              {
+                "type": "recent",
+                "count": 50
+              }
+            ],
+            "refresh": {
+              "type": "aggregateKda",
+              "minGames": 20,
+              "op": ">=",
+              "value": 4.5
+            }
+          },
+          {
+            "type": "history",
+            "filters": [
+              {
+                "type": "recent",
+                "count": 50
+              }
+            ],
+            "refresh": {
+              "type": "qualifiedRatio",
+              "minGames": 20,
+              "criteria": [
+                {
+                  "metric": "kda",
+                  "op": ">=",
+                  "value": 5
+                }
+              ],
+              "op": ">=",
+              "value": 0.4
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "hexaram_mvp",
+    "name": "MVP 选手",
+    "desc": "同模式最近50场正常对局，评分有效样本至少20场；MVP占比≥25%，沿用现有七维评分。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 20,
+          "criteria": [
+            {
+              "metric": "mvp",
+              "op": ">=",
+              "value": 1
+            }
+          ],
+          "op": ">=",
+          "value": 0.25
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_svp",
+    "name": "尽力局常客",
+    "desc": "同模式最近50场正常对局，评分有效样本至少20场，其中有效败局至少10场；败局SVP占比≥40%。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "and",
+        "conditions": [
+          {
+            "type": "history",
+            "filters": [
+              {
+                "type": "recent",
+                "count": 50
+              }
+            ],
+            "refresh": {
+              "type": "qualifiedRatio",
+              "minGames": 20,
+              "criteria": [
+                {
+                  "metric": "mvp",
+                  "op": ">=",
+                  "value": 0
+                }
+              ],
+              "op": ">=",
+              "value": 0
+            }
+          },
+          {
+            "type": "history",
+            "filters": [
+              {
+                "type": "recent",
+                "count": 50
+              },
+              {
+                "type": "stat",
+                "metric": "win",
+                "op": "==",
+                "value": 0
+              }
+            ],
+            "refresh": {
+              "type": "qualifiedRatio",
+              "minGames": 10,
+              "criteria": [
+                {
+                  "metric": "svp",
+                  "op": ">=",
+                  "value": 1
+                }
+              ],
+              "op": ">=",
+              "value": 0.4
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "hexaram_participation",
+    "name": "团战常客",
+    "desc": "同模式最近50场正常对局，有效样本至少20场；至少50%的有效场次参团率≥75%。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 20,
+          "criteria": [
+            {
+              "metric": "participation",
+              "op": ">=",
+              "value": 0.75
+            }
+          ],
+          "op": ">=",
+          "value": 0.5
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_style_front",
+    "name": "前排常客",
+    "desc": "同模式最近200场正常对局，有效样本至少50场；至少25%的场次有坦装证据：两件防御成装，或前排英雄搭配一件防御成装。仅描述出装偏好。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 200
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 50,
+          "criteria": [],
+          "op": ">=",
+          "value": 0.25,
+          "alternatives": [
+            [
+              {
+                "metric": "hexTankItems",
+                "op": ">=",
+                "value": 2
+              }
+            ],
+            [
+              {
+                "metric": "hexFrontChampion",
+                "op": "==",
+                "value": 1
+              },
+              {
+                "metric": "hexTankItems",
+                "op": ">=",
+                "value": 1
+              }
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_style_support",
+    "name": "辅助出装偏好",
+    "desc": "同模式最近200场正常对局，有效样本至少50场；至少20%的场次有辅助出装证据：两件辅助成装，或辅助型英雄搭配一件辅助成装。不使用治疗量。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 200
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 50,
+          "criteria": [],
+          "op": ">=",
+          "value": 0.2,
+          "alternatives": [
+            [
+              {
+                "metric": "hexSupportItems",
+                "op": ">=",
+                "value": 2
+              }
+            ],
+            [
+              {
+                "metric": "hexSupportChampion",
+                "op": "==",
+                "value": 1
+              },
+              {
+                "metric": "hexSupportItems",
+                "op": ">=",
+                "value": 1
+              }
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_role_fighter",
+    "name": "战士常客",
+    "desc": "同模式最近200场正常对局，已知主类型样本至少50场；战士主类型使用占比≥40%。每位英雄只计一种固定主类型，仅描述使用偏好。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 200
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 50,
+          "criteria": [
+            {
+              "metric": "roleFighter",
+              "op": ">=",
+              "value": 1
+            }
+          ],
+          "op": ">=",
+          "value": 0.4
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_role_marksman",
+    "name": "射手常客",
+    "desc": "同模式最近200场正常对局，已知主类型样本至少50场；射手主类型使用占比≥40%。每位英雄只计一种固定主类型，仅描述使用偏好。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 200
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 50,
+          "criteria": [
+            {
+              "metric": "roleMarksman",
+              "op": ">=",
+              "value": 1
+            }
+          ],
+          "op": ">=",
+          "value": 0.4
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_role_mage",
+    "name": "法师常客",
+    "desc": "同模式最近200场正常对局，已知主类型样本至少50场；法师主类型使用占比≥40%。每位英雄只计一种固定主类型，仅描述使用偏好。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 200
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 50,
+          "criteria": [
+            {
+              "metric": "roleMage",
+              "op": ">=",
+              "value": 1
+            }
+          ],
+          "op": ">=",
+          "value": 0.4
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_role_tank",
+    "name": "坦克常客",
+    "desc": "同模式最近200场正常对局，已知主类型样本至少50场；坦克主类型使用占比≥40%。每位英雄只计一种固定主类型，仅描述使用偏好。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 200
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 50,
+          "criteria": [
+            {
+              "metric": "roleTank",
+              "op": ">=",
+              "value": 1
+            }
+          ],
+          "op": ">=",
+          "value": 0.4
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_role_assassin",
+    "name": "刺客常客",
+    "desc": "同模式最近200场正常对局，已知主类型样本至少50场；刺客主类型使用占比≥40%。每位英雄只计一种固定主类型，仅描述使用偏好。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 200
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 50,
+          "criteria": [
+            {
+              "metric": "roleAssassin",
+              "op": ">=",
+              "value": 1
+            }
+          ],
+          "op": ">=",
+          "value": 0.4
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_role_support",
+    "name": "辅助常客",
+    "desc": "同模式最近200场正常对局，已知主类型样本至少50场；辅助主类型使用占比≥40%。每位英雄只计一种固定主类型，仅描述使用偏好。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 200
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 50,
+          "criteria": [
+            {
+              "metric": "roleSupport",
+              "op": ">=",
+              "value": 1
+            }
+          ],
+          "op": ">=",
+          "value": 0.4
+        }
+      }
+    }
+  },
+  {
+    "id": "hexaram_allround",
+    "name": "全能高手",
+    "desc": "同模式最近200场正常对局，已知主类型样本至少100场；总胜率严格>52%，任一类型占比≤35%；至少四种类型各占≥10%，且这四种类型各使用至少3位不同英雄。",
+    "enabled": true,
+    "isDefault": true,
+    "good": true,
+    "condition": {
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 200
+          }
+        ],
+        "refresh": {
+          "type": "championDistribution",
+          "minGames": 100,
+          "maxShare": 0.35,
+          "minShare": 0.1,
+          "minTypes": 4,
+          "minChampions": 3,
+          "winRateOp": ">",
+          "winRate": 0.52
+        }
       }
     }
   },
   {
     "id": "hexaram_streak_win",
     "name": "{N}连胜",
-    "desc": "最近海克斯对局连续获胜至少 3 场",
+    "desc": "同模式最近50场正常对局，从最新一场开始连续胜至少3场。",
     "enabled": true,
     "isDefault": true,
     "good": true,
     "condition": {
-      "type": "history",
-      "filters": [
-        {
-          "type": "recent",
-          "count": 20
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
+          }
+        ],
+        "refresh": {
+          "type": "streak",
+          "kind": "win",
+          "min": 3
         }
-      ],
-      "refresh": {
-        "type": "streak",
-        "kind": "win",
-        "min": 3
       }
     }
   },
   {
     "id": "hexaram_streak_loss",
     "name": "{N}连败",
-    "desc": "最近海克斯对局连续失利至少 3 场，仅描述近期结果",
+    "desc": "同模式最近50场正常对局，从最新一场开始连续败至少3场。",
     "enabled": true,
     "isDefault": true,
     "good": false,
     "condition": {
-      "type": "history",
-      "filters": [
-        {
-          "type": "recent",
-          "count": 20
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
+          }
+        ],
+        "refresh": {
+          "type": "streak",
+          "kind": "loss",
+          "min": 3
         }
-      ],
-      "refresh": {
-        "type": "streak",
-        "kind": "loss",
-        "min": 3
       }
     }
   },
   {
     "id": "hexaram_high_win",
     "name": "近期高胜率",
-    "desc": "近 20 场海克斯胜率 ≥ 65%，至少 10 场",
+    "desc": "同模式最近50场正常对局，至少20场；胜率≥65%。",
     "enabled": true,
     "isDefault": true,
     "good": true,
     "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "history",
-          "filters": [
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
+          }
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 20,
+          "criteria": [
             {
-              "type": "recent",
-              "count": 20
+              "metric": "win",
+              "op": ">=",
+              "value": 1
             }
           ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 10
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 20
-            }
-          ],
-          "refresh": {
-            "type": "average",
-            "metric": "win",
-            "op": ">=",
-            "value": 0.65
-          }
+          "op": ">=",
+          "value": 0.65
         }
-      ]
+      }
     }
   },
   {
     "id": "hexaram_low_win",
     "name": "近期胜率偏低",
-    "desc": "近 20 场海克斯胜率 ≤ 35%，至少 10 场；不代表实力",
+    "desc": "同模式最近50场正常对局，至少20场；胜率≤35%。不代表实力。",
     "enabled": true,
     "isDefault": true,
     "good": false,
     "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 20
-            }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 10
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
           }
-        },
-        {
-          "type": "history",
-          "filters": [
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 20,
+          "criteria": [
             {
-              "type": "recent",
-              "count": 20
-            }
-          ],
-          "refresh": {
-            "type": "average",
-            "metric": "win",
-            "op": "<=",
-            "value": 0.35
-          }
-        }
-      ]
-    }
-  },
-  {
-    "id": "hexaram_style_front",
-    "name": "前排常客",
-    "desc": "近 200 场正常海斗中，至少 25% 且至少 6 场有坦装证据（2 件防御成装，或前排英雄搭配 1 件防御成装）。只描述出装偏好；总样本至少 30 场。",
-    "enabled": true,
-    "isDefault": true,
-    "good": true,
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 30
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            },
-            {
-              "type": "stat",
-              "metric": "hexTankBuild",
-              "op": "==",
+              "metric": "win",
+              "op": ">=",
               "value": 1
             }
           ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 6
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "ratio",
-            "metric": "hexTankBuild",
-            "gameOp": "==",
-            "gameValue": 1,
-            "op": ">=",
-            "value": 0.25
-          }
+          "op": "<=",
+          "value": 0.35
         }
-      ]
+      }
     }
   },
   {
-    "id": "hexaram_style_support",
-    "name": "奶盾偏好",
-    "desc": "近 200 场正常海斗中，至少 20% 且至少 6 场有辅助出装（2 件辅助成装，或奶盾英雄搭配 1 件）。不把低输出等同混子；总样本至少 30 场。",
-    "enabled": true,
-    "isDefault": true,
-    "good": true,
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 30
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            },
-            {
-              "type": "stat",
-              "metric": "hexSupportBuild",
-              "op": "==",
-              "value": 1
-            }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 6
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "ratio",
-            "metric": "hexSupportBuild",
-            "gameOp": "==",
-            "gameValue": 1,
-            "op": ">=",
-            "value": 0.2
-          }
-        }
-      ]
-    }
-  },
-  {
-    "id": "hexaram_style_rescue",
-    "name": "救场奶盾",
-    "desc": "近 200 场中至少 15% 且至少 5 场：辅助出装，队友治疗+护盾每分钟 ≥600、参团 ≥65%、每分钟死亡 ≤0.65；自疗不计；总样本至少 30 场。",
-    "enabled": true,
-    "isDefault": true,
-    "good": true,
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 30
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            },
-            {
-              "type": "stat",
-              "metric": "hexRescueSupport",
-              "op": "==",
-              "value": 1
-            }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 5
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "ratio",
-            "metric": "hexRescueSupport",
-            "gameOp": "==",
-            "gameValue": 1,
-            "op": ">=",
-            "value": 0.15
-          }
-        }
-      ]
-    }
-  },
-  {
-    "id": "hexaram_style_ineffective",
-    "name": "辅助低效局偏多",
-    "desc": "近 200 场中至少 10% 且至少 4 场：辅助出装，队友治疗+护盾每分钟 <200、控制每分钟 <1 秒、输出 <12%、参团 <55%、每分钟死亡 >0.65；字段缺失不命中；总样本至少 30 场。",
-    "enabled": true,
+    "id": "hexaram_low_damage_ashe_trundle",
+    "name": "魔怔人",
+    "desc": "默认关闭；同模式最近50场、至少20场正常对局。近 50 场海克斯中，寒冰或巨魔团队输出占比低于 12% 的对局至少 2 场。只描述重复低输出，不判断是否有适配强化或是否故意；缺少伤害数据不计入。",
+    "enabled": false,
     "isDefault": true,
     "good": false,
     "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
+      "type": "perMode",
+      "condition": {
+        "type": "and",
+        "conditions": [
+          {
+            "type": "history",
+            "filters": [
+              {
+                "type": "recent",
+                "count": 50
+              }
+            ],
+            "refresh": {
+              "type": "count",
+              "op": ">=",
+              "value": 20
             }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 30
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            },
-            {
-              "type": "stat",
-              "metric": "hexIneffectiveSupport",
-              "op": "==",
-              "value": 1
+          },
+          {
+            "type": "history",
+            "filters": [
+              {
+                "type": "recent",
+                "count": 50
+              },
+              {
+                "type": "champion",
+                "ids": [
+                  22,
+                  48
+                ]
+              },
+              {
+                "type": "stat",
+                "metric": "damageShare",
+                "op": "<",
+                "value": 0.12
+              }
+            ],
+            "refresh": {
+              "type": "count",
+              "op": ">=",
+              "value": 2
             }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 4
           }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "ratio",
-            "metric": "hexIneffectiveSupport",
-            "gameOp": "==",
-            "gameValue": 1,
-            "op": ">=",
-            "value": 0.1
-          }
-        }
-      ]
+        ]
+      }
     }
   },
   {
     "id": "hexaram_style_detached",
     "name": "前排脱节局偏多",
-    "desc": "近 200 场中至少 12% 且至少 5 场：有坦装证据、承伤 ≥25%，但参团 <50%、每分钟死亡 >0.8；仅统计迹象，不断言开团失误；总样本至少 30 场。",
-    "enabled": true,
+    "desc": "默认关闭；同模式最近50场正常对局，有效样本至少20场；至少12%且至少5场：有坦装证据、承伤占比≥25%、参团率<50%、每分钟死亡>0.8。只统计迹象，不断言开团失误。",
+    "enabled": false,
     "isDefault": true,
     "good": false,
     "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 30
+      "type": "perMode",
+      "condition": {
+        "type": "history",
+        "filters": [
+          {
+            "type": "recent",
+            "count": 50
           }
-        },
-        {
-          "type": "history",
-          "filters": [
+        ],
+        "refresh": {
+          "type": "qualifiedRatio",
+          "minGames": 20,
+          "minMatches": 5,
+          "criteria": [
             {
-              "type": "recent",
-              "count": 200
+              "metric": "damageTakenShare",
+              "op": ">=",
+              "value": 0.25
             },
             {
-              "type": "stat",
-              "metric": "hexFrontDetached",
-              "op": "==",
-              "value": 1
-            }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 5
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "ratio",
-            "metric": "hexFrontDetached",
-            "gameOp": "==",
-            "gameValue": 1,
-            "op": ">=",
-            "value": 0.12
-          }
-        }
-      ]
-    }
-  },
-  {
-    "id": "hexaram_style_convert",
-    "name": "经济转输出",
-    "desc": "近 200 场中至少 20% 且至少 6 场：输出 ≥25%、输出占比/经济占比 ≥1.3、参团 ≥60%；描述伤害转化，不等同有效伤害；总样本至少 30 场。",
-    "enabled": true,
-    "isDefault": true,
-    "good": true,
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
-          ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 30
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
+              "metric": "participation",
+              "op": "<",
+              "value": 0.5
             },
             {
-              "type": "stat",
-              "metric": "hexGoldConversion",
-              "op": "==",
-              "value": 1
+              "metric": "deathsPerMinute",
+              "op": ">",
+              "value": 0.8
             }
           ],
-          "refresh": {
-            "type": "count",
-            "op": ">=",
-            "value": 6
-          }
-        },
-        {
-          "type": "history",
-          "filters": [
-            {
-              "type": "recent",
-              "count": 200
-            }
+          "alternatives": [
+            [
+              {
+                "metric": "hexTankItems",
+                "op": ">=",
+                "value": 2
+              }
+            ],
+            [
+              {
+                "metric": "hexFrontChampion",
+                "op": "==",
+                "value": 1
+              },
+              {
+                "metric": "hexTankItems",
+                "op": ">=",
+                "value": 1
+              }
+            ]
           ],
-          "refresh": {
-            "type": "ratio",
-            "metric": "hexGoldConversion",
-            "gameOp": "==",
-            "gameValue": 1,
-            "op": ">=",
-            "value": 0.2
-          }
+          "op": ">=",
+          "value": 0.12
         }
-      ]
+      }
     }
   }
 ]

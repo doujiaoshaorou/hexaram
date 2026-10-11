@@ -39,6 +39,7 @@
 //! - `Err(String)`: 操作失败，返回错误信息字符串
 
 pub mod ai;
+pub mod champion_roles;
 pub mod hexaram;
 pub mod asset;
 pub mod bp;

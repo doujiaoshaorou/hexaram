@@ -8,21 +8,28 @@
         </n-flex>
       </template>
       <p>
-        玩法标签统计最近最多 200 场正常海斗，至少 30 场才判断；近期胜负及“魔怔人”仍用 20
-        场。出装偏好和实际作用分开判断，单纯输出、承伤或英雄数量不授予标签。可查看每个标签的具体条件；缺少明细不补猜，自定义标签保留。
+        长期类型与出装偏好取最近200场（至少50场）；全能高手至少100场。近期表现取最近50场（至少20场），各海克斯模式独立判断并排除重开。缺失指标不计入有效分母。可复制内置标签为自定义，再修改全部条件。
       </p>
+      <details><summary>查看英雄主类型表（{{ roleSnapshot.version }}）</summary>
+        <p>采用 Riot Data Dragon 的第一个类型标签，每位英雄只计一类；未知英雄不猜测类型。</p>
+        <div style="max-height:300px;overflow:auto"><table><thead><tr><th>英雄</th><th>固定主类型</th></tr></thead><tbody>
+          <tr v-for="champion in roleSnapshot.champions" :key="champion.id"><td>{{ champion.name }}</td><td>{{ roleNames[champion.role] || champion.role }}</td></tr>
+        </tbody></table></div>
+      </details>
       <n-data-table :columns="columns" :data="tags" :loading="loading" :bordered="false" />
     </n-card>
 
     <AISuggestModal v-model:show="aiModalShow" @adopted="onAITagAdopted" />
 
-    <n-modal v-model:show="showModal" preset="card" title="编辑标签" style="width: 900px">
+    <n-modal v-model:show="showModal" preset="card" :title="currentTag.isDefault ? '查看内置标签' : '编辑标签'" style="width: min(1100px, 95vw)">
+      <n-select v-if="!currentTag.isDefault" aria-label="从内置规则开始" filterable :virtual-scroll="false" placeholder="从内置规则开始（可修改所有条件）" :options="presetOptions" @update:value="applyPreset" style="margin-bottom:16px" />
       <n-form
         ref="formRef"
         :model="currentTag"
         label-placement="left"
         label-width="100"
         require-mark-placement="right-hanging"
+        :disabled="currentTag.isDefault"
       >
         <n-form-item label="标签名称" path="name">
           <n-input v-model:value="currentTag.name" placeholder="请输入标签名称" />
@@ -39,7 +46,7 @@
 
         <n-divider title-placement="left">触发条件 (Logic Tree)</n-divider>
 
-        <div class="condition-editor-container">
+        <div class="condition-editor-container" :style="currentTag.isDefault ? 'pointer-events:none' : ''">
           <TagConditionNode
             v-if="currentTag.condition"
             v-model="currentTag.condition"
@@ -55,6 +62,7 @@
       <template #footer>
         <n-flex justify="end">
           <n-button @click="showModal = false">取消</n-button>
+          <n-button v-if="currentTag.isDefault" @click="copyAsCustom(currentTag)">复制为自定义</n-button>
           <n-button type="primary" @click="saveTag" v-if="!currentTag.isDefault">保存</n-button>
         </n-flex>
       </template>
@@ -79,12 +87,24 @@ import {
   NCard,
   NDataTable,
   NFlex,
+  NSelect,
   useThemeVars
 } from 'naive-ui'
 import { invoke } from '@tauri-apps/api/core'
 import TagConditionNode from './TagConditionNode.vue'
 import AISuggestModal from '@renderer/components/tags/AISuggestModal.vue'
 import type { championOption } from '@renderer/types/domain/champion'
+import rolesJson from '../../champion-primary-roles.json?raw'
+import presetsJson from '../../../src-tauri/src/command/mayhem_tags.json?raw'
+const roleSnapshot = JSON.parse(rolesJson) as {version:string;champions:{id:number;name:string;role:string}[]}
+const presets = JSON.parse(presetsJson) as TagConfig[]
+const roleNames: Record<string,string> = {Fighter:'战士',Marksman:'射手',Mage:'法师',Tank:'坦克',Assassin:'刺客',Support:'辅助'}
+const presetOptions = presets.map(t=>({label:t.name,value:t.id}))
+function copyAsCustom(row: any) {
+  currentTag.value = {...JSON.parse(JSON.stringify(row)),id:crypto.randomUUID(),name:row.name+'（自定义）',isDefault:false}
+  showModal.value = true
+}
+function applyPreset(id:string) { const preset=presets.find(t=>t.id===id); if(preset) copyAsCustom(preset) }
 
 const themeVars = useThemeVars()
 
@@ -140,12 +160,13 @@ const columns = [
   },
   {
     title: '名称',
+    width: 150,
     key: 'name',
     render: (row: any) =>
       h(NTag, { type: row.good ? 'success' : 'error' }, { default: () => row.name })
   },
   { title: '描述', key: 'desc' },
-  { title: '默认', key: 'isDefault', render: (row: any) => (row.isDefault ? '是' : '否') },
+  { title: '默认', width: 65, key: 'isDefault', render: (row: any) => (row.isDefault ? '是' : '否') },
   {
     title: '操作',
     key: 'actions',
@@ -246,20 +267,7 @@ function openCreateModal() {
     good: true,
     isDefault: false,
     enabled: true,
-    condition: {
-      // Default root: OR group
-      type: 'or',
-      conditions: [
-        {
-          type: 'history',
-          filters: [
-            { type: 'queue', ids: [2400, 2410, 2450] },
-            { type: 'recent', count: 20 }
-          ], // Mayhem
-          refresh: { type: 'streak', kind: 'win', min: 3 }
-        }
-      ]
-    }
+    condition: {type:'perMode',condition:{type:'and',conditions:[{type:'history',filters:[{type:'recent',count:50}],refresh:{type:'qualifiedRatio',minGames:20,criteria:[{metric:'damageShare',op:'>=',value:0.28}],op:'>=',value:0.3}}]}}
   }
   showModal.value = true
 }
